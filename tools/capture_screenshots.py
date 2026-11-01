@@ -7,7 +7,7 @@ from pathlib import Path
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-from PySide6 import QtTest, QtWidgets
+from PySide6 import QtWidgets
 
 from sts_studio.ui.app import configure
 from sts_studio.ui.window import Window
@@ -21,7 +21,8 @@ window.show()
 def wait(predicate, seconds=5):
     end = time.monotonic() + seconds
     while time.monotonic() < end:
-        QtTest.QTest.qWait(10)
+        app.processEvents()
+        time.sleep(0.01)
         if predicate():
             return
     raise RuntimeError("Demo did not reach the requested state")
@@ -41,7 +42,8 @@ window.end_value.setValue(2700)
 window.sweep_delay.setValue(1600)
 window.speed.setValue(700)
 window.motion.begin_auto(False)
-QtTest.QTest.qWait(9000)
+end = time.monotonic() + 9
+wait(lambda: time.monotonic() >= end, seconds=10)
 window.motion.cancel_auto(silent=True)
 window.off.click()
 wait(lambda: not window.executor.busy and not window.motion.pending_off)
@@ -50,7 +52,7 @@ output.mkdir(exist_ok=True)
 assert window.grab().save(str(output / "demo-monitor.png"))
 window.tabs.setCurrentIndex(1)
 wait(lambda: window.memory.rowCount() > 0 and not window.executor.busy)
-QtTest.QTest.qWait(100)
+app.processEvents()
 assert window.grab().save(str(output / "demo-registers.png"))
 window.monitor.setChecked(False)
 wait(lambda: not window.executor.busy)

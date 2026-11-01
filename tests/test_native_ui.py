@@ -3,7 +3,6 @@ import time
 import unittest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-from PySide6 import QtTest
 from PySide6 import QtWidgets as Q
 
 from sts_studio.ui import Trend, Window
@@ -16,7 +15,7 @@ class NativeUI(unittest.TestCase):
         end = time.monotonic() + seconds
         while time.monotonic() < end:
             app.processEvents()
-            QtTest.QTest.qWait(5)
+            time.sleep(0.005)  # Release the GIL so the Python I/O worker can run.
             if predicate():
                 return
         self.fail("UI timeout")

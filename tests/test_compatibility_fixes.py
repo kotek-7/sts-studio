@@ -9,7 +9,6 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from PySide6 import QtTest
 from PySide6 import QtWidgets as Q
 
 from sts_studio.catalog import identify
@@ -26,7 +25,7 @@ class CompatibilityFixes(unittest.TestCase):
         end = time.monotonic() + timeout
         while time.monotonic() < end:
             app.processEvents()
-            QtTest.QTest.qWait(2)
+            time.sleep(0.002)  # Release the GIL so the Python I/O worker can run.
             if p():
                 return
         self.fail("timeout")
