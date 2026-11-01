@@ -42,13 +42,7 @@ class NativeUI(unittest.TestCase):
 
     def select(self):
         self.w.connections.identify()
-        self.wait(
-            lambda: (
-                self.w.session.current == 1
-                and self.w.values[56].text() != "—"
-                and self.w.executor.busy is None
-            )
-        )
+        self.wait(lambda: self.w.session.current == 1 and self.w.values[56].text() != "—")
         self.w.monitor.setChecked(False)
         self.idle()
 

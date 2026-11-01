@@ -14,6 +14,8 @@ Binary packages include Python and Qt. Keep the complete extracted folder. The C
 
 Windows builds are unsigned. macOS builds are not Developer ID signed or notarized. Read the [installation instructions](https://github.com/kotek-7/sts-studio/blob/v0.6.0/docs/INSTALL.md) if the OS blocks the first launch. `SHA256SUMS.txt` lists package hashes.
 
+For a source build, download `sts-studio-0.6.0-source.tar.gz`. The `qt-everywhere-src` and `pyside-setup-everywhere-src` archives contain dependency sources and are not needed to run the app.
+
 ## Changes
 
 - Add native packages for Windows and macOS and self-contained Ubuntu packages.

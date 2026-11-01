@@ -36,13 +36,11 @@ class CompatibilityFixes(unittest.TestCase):
         self.w.show()
         self.wait(lambda: self.w.session.service is not None and (not self.w.executor.busy))
         self.w.connections.identify()
-        self.wait(
-            lambda: (
-                self.w.session.current == 1
-                and self.w.values[56].text() != "—"
-                and (not self.w.executor.busy)
-            )
-        )
+        self.wait(lambda: self.w.session.current == 1 and self.w.values[56].text() != "—")
+        # Pause polling before waiting for an idle worker; READY can include a monitor job.
+        self.w.monitor.setChecked(False)
+        self.wait(lambda: not self.w.executor.busy)
+        self.w.monitor.setChecked(True)
 
     def tearDown(self):
         w = self.w
