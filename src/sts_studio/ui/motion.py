@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING
 
-from PyQt5 import QtWidgets as Q
+from PySide6 import QtWidgets as Q
 
 from ..automation import Pattern
 from .state import AutoPlan, MotionArgs, PwmPulse, ServoCommand
@@ -68,10 +68,10 @@ class MotionController:
                 self.ui,
                 "Action",
                 "バス全体の登録済み指令を実行します。続けますか？",
-                Q.QMessageBox.Yes | Q.QMessageBox.Cancel,
-                Q.QMessageBox.Cancel,
+                Q.QMessageBox.StandardButton.Yes | Q.QMessageBox.StandardButton.Cancel,
+                Q.QMessageBox.StandardButton.Cancel,
             )
-            == Q.QMessageBox.Yes
+            == Q.QMessageBox.StandardButton.Yes
         ):
             self.ui.executor.submit(
                 "Action", lambda cancel: self.ui.session.require_service().action()

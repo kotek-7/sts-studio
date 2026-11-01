@@ -5,8 +5,8 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING
 
-from PyQt5 import QtCore as C
-from PyQt5 import QtWidgets as Q
+from PySide6 import QtCore as C
+from PySide6 import QtWidgets as Q
 
 from ..files import ParameterImage
 from .widgets import required
@@ -79,7 +79,7 @@ class ProgrammingController:
                 if rebuild:
                     item.setData(C.Qt.ItemDataRole.UserRole, r.address)
                     if j != 3 or not r.writable:
-                        item.setFlags(item.flags() & ~C.Qt.ItemFlags(C.Qt.ItemFlag.ItemIsEditable))
+                        item.setFlags(item.flags() & ~C.Qt.ItemFlag(C.Qt.ItemFlag.ItemIsEditable))
         self.ui.torque.blockSignals(True)
         self.ui.torque.setChecked(bool(result["values"].get(40, 0)))
         self.ui.torque.blockSignals(False)
@@ -125,10 +125,10 @@ class ProgrammingController:
                 self.ui,
                 "設定保存",
                 f"ID {self.ui.session.current} / {r.name}\n{required(self.ui.memory.item(i, 2)).text()} → {value}\n書き込みますか？",
-                Q.QMessageBox.Yes | Q.QMessageBox.Cancel,
-                Q.QMessageBox.Cancel,
+                Q.QMessageBox.StandardButton.Yes | Q.QMessageBox.StandardButton.Cancel,
+                Q.QMessageBox.StandardButton.Cancel,
             )
-            != Q.QMessageBox.Yes
+            != Q.QMessageBox.StandardButton.Yes
         ):
             return
         sid = self.ui.session.require_id()
@@ -208,12 +208,14 @@ class ProgrammingController:
             layout = Q.QVBoxLayout(dialog)
             table = Q.QTableWidget(len(changes), 4)
             table.setHorizontalHeaderLabels(["適用", "項目", "現在", "復元値"])
-            required(table.horizontalHeader()).setSectionResizeMode(1, Q.QHeaderView.Stretch)
+            required(table.horizontalHeader()).setSectionResizeMode(
+                1, Q.QHeaderView.ResizeMode.Stretch
+            )
             for i, (a, v) in enumerate(changes):
                 check = Q.QTableWidgetItem()
                 check.setFlags(
-                    C.Qt.ItemFlags(C.Qt.ItemFlag.ItemIsEnabled)
-                    | C.Qt.ItemFlags(C.Qt.ItemFlag.ItemIsUserCheckable)
+                    C.Qt.ItemFlag(C.Qt.ItemFlag.ItemIsEnabled)
+                    | C.Qt.ItemFlag(C.Qt.ItemFlag.ItemIsUserCheckable)
                 )
                 check.setCheckState(
                     C.Qt.CheckState.Unchecked if a in (5, 6) else C.Qt.CheckState.Checked
@@ -238,11 +240,13 @@ class ProgrammingController:
             layout.addWidget(
                 Q.QLabel("EEPROM復元はトルクOFFで実行。ID/通信速度は初期選択から除外。")
             )
-            buttons = Q.QDialogButtonBox(Q.QDialogButtonBox.Ok | Q.QDialogButtonBox.Cancel)
+            buttons = Q.QDialogButtonBox(
+                Q.QDialogButtonBox.StandardButton.Ok | Q.QDialogButtonBox.StandardButton.Cancel
+            )
             buttons.accepted.connect(dialog.accept)
             buttons.rejected.connect(dialog.reject)
             layout.addWidget(buttons)
-            if dialog.exec_() == Q.QDialog.Accepted:
+            if dialog.exec() == Q.QDialog.DialogCode.Accepted:
                 selected = [
                     pair
                     for i, pair in enumerate(changes)
@@ -289,10 +293,10 @@ class ProgrammingController:
                 self.ui,
                 "Recovery",
                 f"ID {sid} に初期化指令を送信します。設定が失われる可能性があります。\n復帰先ID・通信速度と完了状態は保証できません。続けますか？",
-                Q.QMessageBox.Yes | Q.QMessageBox.Cancel,
-                Q.QMessageBox.Cancel,
+                Q.QMessageBox.StandardButton.Yes | Q.QMessageBox.StandardButton.Cancel,
+                Q.QMessageBox.StandardButton.Cancel,
             )
-            != Q.QMessageBox.Yes
+            != Q.QMessageBox.StandardButton.Yes
         ):
             return
         self.ui.monitor.setChecked(False)
@@ -315,10 +319,10 @@ class ProgrammingController:
                 self.ui,
                 "中点校正",
                 "現在位置を2048に校正します。基準位置とトルクOFFを確認してください。",
-                Q.QMessageBox.Yes | Q.QMessageBox.Cancel,
-                Q.QMessageBox.Cancel,
+                Q.QMessageBox.StandardButton.Yes | Q.QMessageBox.StandardButton.Cancel,
+                Q.QMessageBox.StandardButton.Cancel,
             )
-            == Q.QMessageBox.Yes
+            == Q.QMessageBox.StandardButton.Yes
         ):
             self.ui.executor.submit(
                 "中点校正",

@@ -1,6 +1,9 @@
 import csv
 import os
-import pty
+import sys
+
+if sys.platform == "linux":
+    import pty
 import select
 import tempfile
 import threading
@@ -28,6 +31,7 @@ class Contracts(unittest.TestCase):
     def writes(self):
         return [p for p in self.link.history if p[4] in (3, 4, 5, 6, 131)]
 
+    @unittest.skipUnless(sys.platform == "linux", "Linux PTY integration")
     def test_connect_has_no_writes(self):
         master, slave = pty.openpty()
         link = SerialLink(os.ttyname(slave))

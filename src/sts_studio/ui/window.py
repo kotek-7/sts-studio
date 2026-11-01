@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import time
 
-from PyQt5 import QtCore as C
-from PyQt5 import QtWidgets as Q
+from PySide6 import QtCore as C
+from PySide6 import QtWidgets as Q
 
 from ..jobs import Worker
 from ..runtime.executor import Executor, JobKind
@@ -316,10 +316,10 @@ class Window(DesktopView):
                     self,
                     "終了",
                     text,
-                    Q.QMessageBox.Yes | Q.QMessageBox.Cancel,
-                    Q.QMessageBox.Cancel,
+                    Q.QMessageBox.StandardButton.Yes | Q.QMessageBox.StandardButton.Cancel,
+                    Q.QMessageBox.StandardButton.Cancel,
                 )
-                != Q.QMessageBox.Yes
+                != Q.QMessageBox.StandardButton.Yes
             ):
                 self.session.closing = False
                 event.ignore()

@@ -4,7 +4,7 @@
 
 ## 1. 対象環境と構成
 
-Ubuntu上で動作するQtアプリケーションです。USBシリアルを介してFEETECH SCSバスへ接続します。STS用の動作・設定・監視機能を中心とし、機種とファームウェアの組み合わせからメモリ表を選択します。Python 3.12、PyQt5、pyserialを使用します。
+Linux・Windows・macOS向けのQtアプリケーションです。USBシリアルを介してFEETECH SCSバスへ接続します。STS用の動作・設定・監視機能を中心とし、機種とファームウェアの組み合わせからメモリ表を選択します。Python 3.12、PySide6、pyserialを使用します。
 
 デモモードでは仮想サーボID1/2を使用し、物理ポートを開きません。通信・ファイル・GUIを自動テストしています。実機での電気的挙動、電源断後の設定保持、PWM波形は未検証です。
 
@@ -28,7 +28,7 @@ Ubuntu上で動作するQtアプリケーションです。USBシリアルを介
 | ui.connection / programming | UIイベント | 検索・接続、設定保存・復元のワークフロー | Serviceへの要求 |
 | ui.motion / pwm | UIイベント | AutoPlan、最新指令、停止待ち | Serviceへの要求 |
 | ui.monitoring / diagnostics | 応答・UIイベント | CaptureState、グラフ・記録、通信統計 | 明示ファイル保存 |
-| ui.signals | clicked(bool) | 明示的なpyqtSlot、例外報告 | UIメッセージ |
+| ui.signals | clicked(bool) | 明示的なSlot、例外報告 | UIメッセージ |
 | simulator.VirtualLink | 同じexchangeインターフェース | 仮想ID1/2とアダプター | 物理ポートへのアクセスなし |
 
 `Servo` = {sid:int, model:str, profile:Profile|None, header:bytes[9]}。firmware表示はheader[0].header[1]、モデル識別はheader[3]/header[4]。header[5]を検索IDに上書きして真のIDと決めつけません。
@@ -155,4 +155,4 @@ Workerは同時に1件しか受け付けません。各要求のcancel Eventは�
 
 周期監視はJobKind.MONITORとして分類し、画面に表示する日本語の操作名から操作可否を推測しません。監視中のボタン操作は最大32件まで待機し、超過時はその操作を受け付けずメッセージを表示します。STOP・切断・終了では待機操作を破棄します。STOPの直後に閉じた場合は、すでに要求された停止処理の完了を待って閉じます。
 
-Qtのclicked(bool)はClickActionの明示的なpyqtSlot(bool)で受けます。不要なbool引数をここで消費し、トルクのチェック状態が必要な操作はboolを受け取る通常のハンドラに接続します。関数シグネチャを調べて引数を切り落とすデコレータは使用しません。
+Qtのclicked(bool)はClickActionの明示的なSlot(bool)で受けます。不要なbool引数をここで消費し、トルクのチェック状態が必要な操作はboolを受け取る通常のハンドラに接続します。関数シグネチャを調べて引数を切り落とすデコレータは使用しません。

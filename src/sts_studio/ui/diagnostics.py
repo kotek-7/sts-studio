@@ -6,7 +6,7 @@ import json
 import time
 from typing import TYPE_CHECKING
 
-from PyQt5 import QtWidgets as Q
+from PySide6 import QtWidgets as Q
 
 from ..automation import CommunicationStats
 from ..files import inspect_firmware

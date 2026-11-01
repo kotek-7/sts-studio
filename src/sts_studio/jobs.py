@@ -7,16 +7,16 @@ from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
-from PyQt5.QtCore import QObject, pyqtSignal
+from PySide6.QtCore import QObject, Signal
 
 Work = Callable[[threading.Event], Any]
 
 
 class Worker(QObject):
-    done = pyqtSignal(int, object)
-    failed = pyqtSignal(int, object)
-    progress = pyqtSignal(object)
-    trace = pyqtSignal(str, bytes)
+    done = Signal(int, object)
+    failed = Signal(int, object)
+    progress = Signal(object)
+    trace = Signal(str, bytes)
 
     def __init__(self) -> None:
         super().__init__()

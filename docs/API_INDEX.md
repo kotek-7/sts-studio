@@ -202,7 +202,8 @@ Public desktop entry points.
 
 Application bootstrap.
 
-- `main(argv=None)` — line 10
+- `configure(app: Q.QApplication)` — line 10
+- `main(argv=None)` — line 18
 ## ui/connection.py
 
 Connection workflows and their local state.
@@ -280,8 +281,8 @@ Programming workflows and their local state.
 - `ProgrammingController.save_parameter(self)` — line 98
 - `ProgrammingController.save_image(self)` — line 155
 - `ProgrammingController.load_image(self)` — line 183
-- `ProgrammingController.recovery(self)` — line 283
-- `ProgrammingController.calibrate(self)` — line 310
+- `ProgrammingController.recovery(self)` — line 287
+- `ProgrammingController.calibrate(self)` — line 314
 
 ## ui/pwm.py
 
@@ -342,16 +343,17 @@ Widget layout. Device operations live in feature controllers.
 
 ### DesktopView
 
-- `DesktopView.bind_action(self, button: Q.QAbstractButton, callback: Callable[[], object])` — line 37
-- `DesktopView.build_ui(self, demo: bool=False)` — line 40
-- `DesktopView.spin(lo: int, hi: int, value: int)` — line 135
-- `DesktopView.button(self, text: str, fn: Callable[[], object], kind: str='device')` — line 141
-- `DesktopView.tab(self, title: str)` — line 150
-- `DesktopView.build_debug(self)` — line 161
-- `DesktopView.build_programming(self)` — line 301
-- `DesktopView.build_upgrade(self)` — line 332
-- `DesktopView.build_pwm(self)` — line 364
-- `DesktopView.build_log(self)` — line 434
+- `DesktopView.note(self, text: str)` — line 37
+- `DesktopView.bind_action(self, button: Q.QAbstractButton, callback: Callable[[], object])` — line 40
+- `DesktopView.build_ui(self, demo: bool=False)` — line 43
+- `DesktopView.spin(lo: int, hi: int, value: int)` — line 139
+- `DesktopView.button(self, text: str, fn: Callable[[], object], kind: str='device')` — line 145
+- `DesktopView.tab(self, title: str)` — line 154
+- `DesktopView.build_debug(self)` — line 165
+- `DesktopView.build_programming(self)` — line 305
+- `DesktopView.build_upgrade(self)` — line 338
+- `DesktopView.build_pwm(self)` — line 370
+- `DesktopView.build_log(self)` — line 440
 
 ## ui/widgets.py
 

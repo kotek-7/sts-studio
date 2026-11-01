@@ -1,14 +1,19 @@
 """Real Qt button events and pyserial on a PTY; no physical device access."""
 
 import os
-import pty
+import sys
 
-from PyQt5 import QtWidgets as Q
+if sys.platform == "linux":
+    import pty
+
+import pytest
+from PySide6 import QtWidgets as Q
 
 from sts_studio.runtime.executor import JobKind
 from sts_studio.ui import Window
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="Linux PTY integration")
 def test_real_serial_open_close_via_buttons(qtbot):
     master, slave = pty.openpty()
     w = Window(False)
@@ -47,7 +52,9 @@ def test_search_and_parameter_save_via_buttons(qtbot, monkeypatch):
         row = next(i for i in range(w.memory.rowCount()) if w.memory.item(i, 0).text() == "21")
         w.memory.selectRow(row)
         w.memory.item(row, 3).setText("44")
-        monkeypatch.setattr(Q.QMessageBox, "question", lambda *args: Q.QMessageBox.Yes)
+        monkeypatch.setattr(
+            Q.QMessageBox, "question", lambda *args: Q.QMessageBox.StandardButton.Yes
+        )
         button = next(
             b for b in w.findChildren(Q.QPushButton) if b.text() == "選択した行の編集値を保存"
         )

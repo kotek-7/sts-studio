@@ -2,9 +2,11 @@
 
 import json
 import os
-import pty
-import subprocess
 import sys
+
+if sys.platform == "linux":
+    import pty
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -39,7 +41,7 @@ def test_cli_headless_entry_and_scan():
         [
             sys.executable,
             "-c",
-            'import sys; from sts_studio.cli import main; main(["--demo","info","--id","1"]); assert not any(k.startswith("PyQt5") for k in sys.modules)',
+            'import sys; from sts_studio.cli import main; main(["--demo","info","--id","1"]); assert not any(k.startswith("PySide6") for k in sys.modules)',
         ],
         env=dict(os.environ, PYTHONPATH=str(ROOT / "src")),
         capture_output=True,
@@ -171,6 +173,7 @@ def test_connection_closed_on_failure_and_interrupt(monkeypatch, capsys, failure
     assert link.closed
 
 
+@pytest.mark.skipif(sys.platform != "linux", reason="Linux PTY integration")
 def test_cli_real_serial_pty_read(monkeypatch, capsys):
     import threading
 

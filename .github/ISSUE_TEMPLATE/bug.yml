@@ -1,0 +1,32 @@
+name: Bug report / 不具合
+description: Report a reproducible problem / 再現できる不具合の報告
+title: ""
+body:
+  - type: input
+    id: version
+    attributes:
+      label: STS Studio version / バージョン
+    validations:
+      required: true
+  - type: input
+    id: system
+    attributes:
+      label: OS and package / OS・使用した配布ファイル
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps, expected result, actual result / 手順・期待した結果・実際の結果
+    validations:
+      required: true
+  - type: textarea
+    id: device
+    attributes:
+      label: Servo and connection / サーボ・接続構成
+      description: Model, firmware, adapter, baud rate; does it also happen in demo mode? / 型番・FW・アダプター・通信速度・デモでの再現有無
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots / ログ・画像
+      description: Remove private paths and identifiers before posting. / 個人情報を除いてください。

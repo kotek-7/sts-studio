@@ -4,9 +4,9 @@ import math
 from collections import deque
 from typing import Any
 
-from PyQt5 import QtCore as C
-from PyQt5 import QtGui as G
-from PyQt5 import QtWidgets as Q
+from PySide6 import QtCore as C
+from PySide6 import QtGui as G
+from PySide6 import QtWidgets as Q
 
 SERIES = {
     56: ("Position", "#172b4d"),
@@ -48,7 +48,7 @@ class Trend(Q.QWidget):
 
     def paintEvent(self, event):
         p = G.QPainter(self)
-        p.setRenderHint(G.QPainter.Antialiasing)
+        p.setRenderHint(G.QPainter.RenderHint.Antialiasing)
         p.fillRect(self.rect(), G.QColor("white"))
         rect = C.QRectF(57, 10, max(1, self.width() - 115), max(1, self.height() - 37))
         start, end, lo, hi = self.ranges()

@@ -29,6 +29,10 @@ def emit(value: object) -> None:
 
 
 def main(argv: Sequence[str] | None = None) -> int:
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8")
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.command == "scan" and args.first > args.last:

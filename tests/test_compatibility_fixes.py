@@ -9,8 +9,8 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from PyQt5 import QtTest
-from PyQt5 import QtWidgets as Q
+from PySide6 import QtTest
+from PySide6 import QtWidgets as Q
 
 from sts_studio.catalog import identify
 from sts_studio.files import Recorder
@@ -268,7 +268,7 @@ class CompatibilityFixes(unittest.TestCase):
         self.assertEqual(result["error"], 0)
 
     def test_monitor_keeps_controls_and_status_stable(self):
-        from PyQt5 import QtCore as C
+        from PySide6 import QtCore as C
 
         w = self.w
         w.monitor.setChecked(False)

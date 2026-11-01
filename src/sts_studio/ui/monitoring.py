@@ -5,7 +5,7 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING, Any
 
-from PyQt5 import QtWidgets as Q
+from PySide6 import QtWidgets as Q
 
 from ..files import Recorder, write_csv
 from ..wire import StatusError

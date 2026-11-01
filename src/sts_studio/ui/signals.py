@@ -3,19 +3,19 @@
 import logging
 from collections.abc import Callable
 
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
-from PyQt5.QtWidgets import QAbstractButton
+from PySide6.QtCore import QObject, Signal, Slot
+from PySide6.QtWidgets import QAbstractButton
 
 
 class ClickAction(QObject):
-    failed = pyqtSignal(str)
+    failed = Signal(str)
 
     def __init__(self, button: QAbstractButton, callback: Callable[[], object]) -> None:
         super().__init__(button)
         self._callback = callback
         button.clicked.connect(self.trigger)
 
-    @pyqtSlot(bool)
+    @Slot(bool)
     def trigger(self, checked: bool) -> None:
         try:
             self._callback()

@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from PyQt5 import QtCore as C
-from PyQt5 import QtWidgets as Q
+from PySide6 import QtCore as C
+from PySide6 import QtWidgets as Q
 from serial.tools import list_ports
 
 from ..runtime.executor import JobKind

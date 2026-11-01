@@ -1,86 +1,84 @@
 # STS Studio
 
-Ubuntu向けのFEETECHサーボ設定・監視アプリです。サーボの検索、パラメータ編集、複数台への動作指令、状態のグラフ表示、測定データの保存を行えます。
+FEETECH Debug Tool
 
-## 起動
+[日本語](README.ja.md) · [Download](https://github.com/kotek-7/sts-studio/releases/latest) · [CLI](docs/CLI.en.md)
 
-開発環境はPython 3.12とuvで管理します。依存の解決結果は `uv.lock` に固定しています。
+[![Build](https://github.com/kotek-7/sts-studio/actions/workflows/check.yml/badge.svg)](https://github.com/kotek-7/sts-studio/actions/workflows/check.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-```sh
-cd ~/dev/sts-studio
-uv sync --locked
-uv run --locked ./run.sh
-```
+STS Studio configures and monitors FEETECH serial bus servos. It started from wanting a Linux tool for the tasks covered by the FEETECH debugging software in [Akizuki Denshi's servo guide](https://akizukidenshi.com/goodsaffix/feetech_digital_servo_20220729.pdf).
 
-実機を使わず試す場合は `uv run --locked ./run.sh --demo` を実行します。Debianパッケージとユーザー領域へのインストールではUbuntuの `python3-pyqt5` と `python3-serial` を利用し、uvは不要です。開発用のQtと配布先のQtは別環境として検証します。
+Find connected servos, edit registers, send position and speed commands, and save feedback as CSV or TXT. The desktop app includes plots and a demo mode. A separate CLI returns JSON for scripts.
+
+![STS Studio monitoring two virtual servos in demo mode](docs/images/demo-monitor.png)
+
+*Demo mode, using simulated feedback. The interface uses Japanese and English labels.*
+
+## Download and run
+
+Get the package for your system from [Releases](https://github.com/kotek-7/sts-studio/releases/latest). The binary packages include Python and Qt.
+
+| System | File | Start the app |
+| --- | --- | --- |
+| Ubuntu 24.04, x86_64 | `sts-studio_<version>_amd64.deb` | Install with `sudo apt install ./sts-studio_<version>_amd64.deb`, then open STS Studio from the app menu |
+| Linux, x86_64 | `sts-studio-<version>-linux-x86_64.tar.gz` | Extract and run `gui/sts-studio-gui`; requires Ubuntu 24.04 or compatible system libraries |
+| Windows 11, x86_64 | `sts-studio-<version>-windows-x86_64.zip` | Extract the entire folder and open `gui/sts-studio-gui.exe` |
+| macOS, Apple silicon | `sts-studio-<version>-macos-arm64.zip` | Extract and open `STS Studio.app` |
+| macOS, Intel | `sts-studio-<version>-macos-x86_64.zip` | Extract and open `STS Studio.app` |
+
+macOS packages target macOS 14 or later. Windows packages are unsigned; macOS packages are not Developer ID signed or notarized. See [installation and troubleshooting](docs/INSTALL.md) for first-launch instructions, Linux dependencies, CLI paths, and checksum verification.
+
+To explore without hardware, select **デモ（実機通信なし）**, click **Open**, then **Search**. Select a virtual servo to view its registers and feedback.
+
+## Connect a servo
+
+Select the serial port and the servo's baud rate, click **Open**, then **Search**. The default baud rate is 115,200; change it to match the servo. Ctrl/Shift selects multiple servos. Configuration uses the first selected ID; motion commands use the whole selection.
+
+Opening a connection does not send motion commands. Live is enabled by default: moving the slider sends a position command. STOP requests torque OFF and leaves monitoring running. Registered commands remain queued on the servo after STOP and can be executed by a later Action. See the [operation guide](docs/USAGE.md) before using automatic motion.
+
+## Registers and files
+
+![Register editor showing a virtual STS3215](docs/images/demo-registers.png)
+
+*Register editor in demo mode.*
+
+EEPROM edits require torque OFF. Writes are read back for confirmation. STS `.xdat` backups store the 40-byte configuration area; restore checks model and firmware and applies selected differences. Monitoring can record CSV or TXT.
+
+STS is the main target. The catalog also contains SCS/SMS definitions; available operations depend on the model and firmware profile. Firmware files can be inspected, but firmware flashing is not implemented. This is an independent project, not a FEETECH product.
 
 ## CLI
 
-GUIを起動せず、端末から検索・読取・設定保存・指令送信を実行できます。
+The CLI runs without opening the GUI. For an extracted package, use the executable in `cli/`; the Ubuntu deb installs `sts-studio` on PATH.
 
 ```sh
-./run.sh cli --help
-./run.sh cli ports
-./run.sh cli --demo scan
-./run.sh cli --port /dev/ttyUSB0 --baud 1000000 feedback --id 1
+sts-studio --demo scan
+sts-studio --port /dev/ttyUSB0 --baud 1000000 feedback --id 1
 ```
 
-インストール済み環境では `sts-studio` がCLIの入口です。結果はJSON、連続監視はJSON Linesで出力します。詳しくは [CLIの使い方](docs/CLI.md) を参照してください。
+On Windows, a port name is usually `COM3`; on macOS it is usually `/dev/cu.*`. Results are JSON, and `watch` emits JSON Lines. See [CLI commands](docs/CLI.en.md).
 
-## 接続と操作
+## Run from source
 
-1. USBシリアルを接続し、Portを更新します。`/dev/ttyUSB0`、`/dev/ttyACM0` などを選択します。
-2. サーボの通信速度に合わせてBaudを設定し、Openで接続します。初期値は115,200です。
-3. SearchでID範囲を検索するか、IDを指定して読み取ります。
-4. サーボを選択し、設定・監視・動作指令を行います。Ctrl / Shiftで複数台を選択できます。
-
-接続しただけでは動作指令を送信しません。アクセス拒否の場合は `ls -l /dev/ttyUSB0` と `id` でポートの権限を確認してください。
-
-STOPでトルクをOFFにしても、モニターがONならFBと記録は継続します。Liveは初期ONで、スライダーを動かすと位置指令を送信します。Step動作は端点を跨いで折り返すため、設定範囲を超える1回の指令を含みます。
-
-## 機能
-
-| 画面 | 内容 |
-|---|---|
-| 操作 | 位置・速度・加速度の指定、Write / Sync Write / Reg Write / Action、トルクON/OFF、往復・ステップ動作 |
-| 設定 | レジスタの読取・編集、ID・通信速度変更、xdat保存・差分復元、中点校正、Recovery |
-| モニター | 位置・目標位置・速度・負荷・電流・温度・電圧、グラフ範囲設定、CSV / TXT記録 |
-| 診断・ファイル検査 | 通信時間・成功率の集計、ファームウェアのサイズ・SHA256・Intel HEX検査 |
-| PWM | 対応アダプターのパルス幅・出力切替、往復・ステップ動作 |
-| 通信ログ | 操作結果とHEXパケットの表示、仕様書・機能一覧へのリンク |
-
-EEPROMはトルクOFFで編集します。書き込み後は値を読み戻して確認します。STOPは対象へのトルクOFFを試み、確認できなかったIDを表示します。Reg Writeの登録指令はSTOPでは消去されず、後のActionで実行される可能性があります。
-
-## 仕様と開発
-
-- [機能一覧](docs/FEATURE_MATRIX.md)
-- [詳細機能仕様](docs/SPECIFICATION.md): 入力範囲、前提、通信、成功条件、エラー処理、実装とテスト。
-- [設計仕様](docs/DESIGN.md): 状態遷移、スレッド、データ構造、ファイル形式。
-- [レジスタ・モデル表](docs/REGISTERS.md): 10個の操作・監視プロファイル、6個の設定メモリ表、269レジスタ、40モデル。
-- [API索引](docs/API_INDEX.md)
-- [検証範囲](docs/VALIDATION.md)
-
-`spec/` に機械可読定義、`src/sts_studio/` に実装、`tests/` にテストがあります。
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then run:
 
 ```sh
-# 全検査: 整形・lint・型・仕様書・テスト
-uv run --locked python tools/check.py
-
-# 編集後の整形と仕様書生成
-uv run --locked ruff format src tests tools
-uv run --locked python tools/render_spec.py
-
-# deb / ソース配布物の生成
-uv run --locked python tools/package.py
-
-# このチェックアウトでコミット前の静的検査を有効化
-git config core.hooksPath .githooks
+git clone https://github.com/kotek-7/sts-studio.git
+cd sts-studio
+uv sync --locked
+uv run --locked python -m sts_studio --demo
 ```
 
-開発手順・責務の境界・Git運用は [開発ガイド](docs/DEVELOPMENT.md) を参照してください。
+Source commands work on all three operating systems. Python 3.12 is selected by the project. For a source CLI invocation, use `uv run --locked python -m sts_studio cli --demo scan`.
 
-## 対応範囲
+## Development
 
-STSを中心に機能を提供します。SCS/SMSのメモリ定義も含みますが、各機種の実機動作は未検証です。xdat設定ファイルはSTSの40byte設定領域に対応し、モデルとファームウェアの一致を確認してから復元します。他ソフトウェアとの往復読込は未検証です。
+[Development guide](docs/DEVELOPMENT.en.md) · [Contributing](CONTRIBUTING.md) · [Changelog](CHANGELOG.md)
 
-ファームウェアはファイル検査のみ対応し、書き込みには対応していません。Modbusと、PWMアダプターへのMin/Max永続設定も未対応です。実機での動作・校正・Recovery・PWM波形、および電源断後のEEPROM保持は未検証です。
+Run `uv run --locked python tools/check.py` for formatting, lint, types, specification consistency, and tests. The detailed [design](docs/DESIGN.md) and [register reference](docs/REGISTERS.md) are currently in Japanese.
+
+Report bugs through [GitHub Issues](https://github.com/kotek-7/sts-studio/issues). Include the app version, OS, steps to reproduce, and relevant log output.
+
+## License
+
+STS Studio is licensed under [MIT](LICENSE). Bundled dependencies retain their own licenses; see [third-party notices](THIRD_PARTY_NOTICES.md).

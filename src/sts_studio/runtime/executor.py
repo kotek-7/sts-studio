@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any
 
-from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
+from PySide6.QtCore import QObject, Signal, Slot
 
 from ..jobs import Work, Worker
 
@@ -28,10 +28,10 @@ class Job:
 
 
 class Executor(QObject):
-    changed = pyqtSignal()
-    settled = pyqtSignal()
-    failed = pyqtSignal(str, object)
-    message = pyqtSignal(str)
+    changed = Signal()
+    settled = Signal()
+    failed = Signal(str, object)
+    message = Signal(str)
 
     def __init__(self, worker: Worker, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -104,7 +104,7 @@ class Executor(QObject):
     def cancel_current(self) -> None:
         self.worker.cancel_current()
 
-    @pyqtSlot(int, object)
+    @Slot(int, object)
     def _done(self, token: int, result: Any) -> None:
         job = self._active
         if job is None or job.token != token:
@@ -121,7 +121,7 @@ class Executor(QObject):
             self.changed.emit()
             self.settled.emit()
 
-    @pyqtSlot(int, object)
+    @Slot(int, object)
     def _failed(self, token: int, error: Exception) -> None:
         job = self._active
         if job is None or job.token != token:

@@ -3,15 +3,15 @@
 import threading
 
 import pytest
-from PyQt5.QtCore import QObject, pyqtSignal
+from PySide6.QtCore import QObject, Signal
 
 from sts_studio.jobs import Worker
 from sts_studio.runtime.executor import Executor, JobKind
 
 
 class ControlledWorker(QObject):
-    done = pyqtSignal(int, object)
-    failed = pyqtSignal(int, object)
+    done = Signal(int, object)
+    failed = Signal(int, object)
 
     def __init__(self):
         super().__init__()

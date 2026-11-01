@@ -4,13 +4,13 @@
 
 ```sh
 uv sync --locked
-uv run --locked ./run.sh --demo
+uv run --locked python -m sts_studio --demo
 uv run --locked python tools/check.py
 ```
 
 Python 3.12を `.python-version` と `pyproject.toml` で指定し、実際の依存バージョンとハッシュを `uv.lock` で固定します。新規チェックアウトでは `uv sync --locked` を使用します。依存変更は `uv add` / `uv remove` で行い、pyprojectとlockを一緒にコミットします。実行時に不要なRuff・mypy・pytest・pytest-qt・pyserial型定義はdevグループです。
 
-Qtとpyserialは維持しました。ネイティブのウィジェット、USBシリアル、既存の通信仕様を扱うための機能は足りており、今回の問題は状態所有とイベント境界でした。UIフレームワークの全面変更より、標準ライブラリのThreadPoolExecutorと明示的なQtスロットで独自の待機・引数推測処理を減らしています。
+GUIはPySide6、USBシリアル通信はpyserialを使用します。ThreadPoolExecutorとQtスロットで通信処理と画面更新を分離します。
 
 ## 責務と依存
 
@@ -68,13 +68,13 @@ git config core.hooksPath .githooks
 git diff --check
 ```
 
-`main` に基準版と再構成の変更を別コミットで保存しています。ローカルのpre-commitフックは整形・lint・型・生成仕様書を検査し、ファイルを自動修正しません。テストを含めた全検査は `tools/check.py`。GitHub Actionsも同じコマンドを使用します。リモートへのpushや公開は行っていません。
+ローカルのpre-commitフックは整形・lint・型・生成仕様書を検査し、ファイルを自動修正しません。テストを含めた全検査は `tools/check.py`。GitHub Actionsも同じコマンドを使用します。
 
 `.venv`、キャッシュ、`work/`、`dist/` はGit管理外です。生成仕様書はレビューできるよう追跡し、元JSON・ソースとの一致を検査します。依存lockは必ず追跡します。
 
 ## 配布
 
-`uv run --locked python tools/package.py` はバージョンをpyprojectから読み、debとソースアーカイブを生成します。debはUbuntuのシステムPython・Qt・pyserialで起動し、開発用venvをコピーしません。ソースアーカイブにはuv.lock・開発設定・テストを含めます。
+`uv run --locked python tools/package.py` はバージョンをpyprojectから読み、debとソースアーカイブを生成します。配布物にはPython・Qt・pyserialを同梱します。Windows・macOS向けも対象OS上でビルドします。[リリース手順](RELEASING.md)を参照してください。ソースアーカイブにはuv.lock・開発設定・テストを含めます。
 
 参考: [uvプロジェクト管理](https://docs.astral.sh/uv/guides/projects/)、[Ruff設定](https://docs.astral.sh/ruff/configuration/)、[mypy設定](https://mypy.readthedocs.io/en/stable/config_file.html)、[uvとGitHub Actions](https://docs.astral.sh/uv/guides/integration/github/)。
 

@@ -6,9 +6,9 @@ from collections.abc import Callable
 from functools import partial
 from typing import TYPE_CHECKING
 
-from PyQt5 import QtCore as C
-from PyQt5 import QtGui as G
-from PyQt5 import QtWidgets as Q
+from PySide6 import QtCore as C
+from PySide6 import QtGui as G
+from PySide6 import QtWidgets as Q
 
 from ..catalog import PROTOCOL, ROOT
 from .signals import bind_click
@@ -34,10 +34,14 @@ class DesktopView(Q.QMainWindow):
     motion_buttons: list[Q.QPushButton]
     device_buttons: list[Q.QPushButton]
 
+    def note(self, text: str) -> None:
+        raise NotImplementedError
+
     def bind_action(self, button: Q.QAbstractButton, callback: Callable[[], object]) -> None:
         bind_click(button, callback, self.note)
 
     def build_ui(self, demo: bool = False) -> None:
+        w: Q.QWidget
         main = Q.QWidget()
         self.setCentralWidget(main)
         outer = Q.QVBoxLayout(main)
@@ -103,7 +107,7 @@ class DesktopView(Q.QMainWindow):
         lv.addWidget(self.scan_status)
         self.servos = Q.QTreeWidget()
         self.servos.setHeaderLabels(["ID", "Model", "FW"])
-        self.servos.setSelectionMode(Q.QAbstractItemView.ExtendedSelection)
+        self.servos.setSelectionMode(Q.QAbstractItemView.SelectionMode.ExtendedSelection)
         self.servos.setColumnWidth(0, 40)
         self.servos.setColumnWidth(1, 120)
         self.servos.itemSelectionChanged.connect(self.connections.selection_changed)
@@ -153,7 +157,7 @@ class DesktopView(Q.QMainWindow):
         layout.setSpacing(9)
         scroll = Q.QScrollArea()
         scroll.setWidgetResizable(True)
-        scroll.setFrameShape(Q.QFrame.NoFrame)
+        scroll.setFrameShape(Q.QFrame.Shape.NoFrame)
         scroll.setWidget(content)
         self.tabs.addTab(scroll, title)
         return layout
@@ -174,9 +178,9 @@ class DesktopView(Q.QMainWindow):
         self.offset_s = self.spin(0, 600, 0)
         self.plot_lower = Q.QDoubleSpinBox()
         self.upper = Q.QDoubleSpinBox()
-        for w in [self.plot_lower, self.upper]:
-            w.setRange(-1000000000.0, 1000000000.0)
-            w.valueChanged.connect(self.monitoring.plot_config)
+        for bound in [self.plot_lower, self.upper]:
+            bound.setRange(-1000000000.0, 1000000000.0)
+            bound.valueChanged.connect(self.monitoring.plot_config)
         self.window_s.valueChanged.connect(self.monitoring.plot_config)
         self.offset_s.valueChanged.connect(self.monitoring.plot_config)
         for index, (name, w) in enumerate(
@@ -314,10 +318,12 @@ class DesktopView(Q.QMainWindow):
         self.memory.setHorizontalHeaderLabels(
             ["Addr", "Memory", "Value", "Edit", "Area", "R/W", "Range"]
         )
-        self.memory.setSelectionBehavior(Q.QAbstractItemView.SelectRows)
-        self.memory.setSelectionMode(Q.QAbstractItemView.SingleSelection)
+        self.memory.setSelectionBehavior(Q.QAbstractItemView.SelectionBehavior.SelectRows)
+        self.memory.setSelectionMode(Q.QAbstractItemView.SelectionMode.SingleSelection)
         self.memory.itemSelectionChanged.connect(self.programming.describe_register)
-        required(self.memory.horizontalHeader()).setSectionResizeMode(1, Q.QHeaderView.Stretch)
+        required(self.memory.horizontalHeader()).setSectionResizeMode(
+            1, Q.QHeaderView.ResizeMode.Stretch
+        )
         for i, width in [(0, 48), (2, 80), (3, 80), (4, 70), (5, 45), (6, 125)]:
             self.memory.setColumnWidth(i, width)
         lay.addWidget(self.memory, 1)

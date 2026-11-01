@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, Literal
 
-ROOT = Path(__file__).resolve().parents[2]
-CATALOG = json.loads((ROOT / "spec/catalog.json").read_text())
-PROTOCOL = json.loads((ROOT / "spec/protocol.json").read_text())
+from . import root as ROOT
+
+CATALOG = json.loads((ROOT / "spec/catalog.json").read_text(encoding="utf-8"))
+PROTOCOL = json.loads((ROOT / "spec/protocol.json").read_text(encoding="utf-8"))
 
 
 def unsigned_word(

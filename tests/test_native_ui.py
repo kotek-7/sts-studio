@@ -3,8 +3,8 @@ import time
 import unittest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
-from PyQt5 import QtTest
-from PyQt5 import QtWidgets as Q
+from PySide6 import QtTest
+from PySide6 import QtWidgets as Q
 
 from sts_studio.ui import Trend, Window
 
