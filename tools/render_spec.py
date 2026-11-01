@@ -119,7 +119,7 @@ def generated():
     for file in sorted((ROOT / "src/sts_studio").rglob("*.py")):
         tree = ast.parse(file.read_text())
         api += [
-            f"## {file.relative_to(ROOT / 'src/sts_studio')}",
+            f"## {file.relative_to(ROOT / 'src/sts_studio').as_posix()}",
             "",
             ast.get_docstring(tree) or "",
             "",

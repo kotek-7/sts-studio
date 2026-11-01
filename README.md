@@ -11,7 +11,7 @@ STS Studio configures and monitors FEETECH serial bus servos. It started from wa
 
 Find connected servos, edit registers, send position and speed commands, and save feedback as CSV or TXT. The desktop app includes plots and a demo mode. A separate CLI returns JSON for scripts.
 
-![STS Studio monitoring two virtual servos in demo mode](docs/images/demo-monitor.png)
+![STS Studio monitoring a virtual servo in demo mode](docs/images/demo-monitor.png)
 
 *Demo mode, using simulated feedback. The interface uses Japanese and English labels.*
 

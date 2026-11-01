@@ -202,8 +202,8 @@ Public desktop entry points.
 
 Application bootstrap.
 
-- `configure(app: Q.QApplication)` — line 10
-- `main(argv=None)` — line 18
+- `configure(app: Q.QApplication)` — line 11
+- `main(argv=None)` — line 22
 ## ui/connection.py
 
 Connection workflows and their local state.

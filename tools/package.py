@@ -6,6 +6,7 @@ import hashlib
 import importlib.metadata
 import json
 import platform
+import plistlib
 import shutil
 import subprocess
 import sys
@@ -94,8 +95,24 @@ def build() -> None:
         ]
         for source, dest in data:
             command += ["--add-data", f"{source}:{dest}"]
+        if system == "windows":
+            version_file = work / f"{name}-version.txt"
+            numbers = tuple(int(part) for part in VERSION.split(".")) + (0,)
+            version_file.write_text(
+                f"VSVersionInfo(ffi=FixedFileInfo(filevers={numbers!r}, prodvers={numbers!r}, mask=0x3f, flags=0, OS=0x40004, fileType=1, subtype=0, date=(0, 0)), kids=[StringFileInfo([StringTable('040904B0', [StringStruct('CompanyName', 'kotek'), StringStruct('FileDescription', 'STS Studio - FEETECH Debug Tool'), StringStruct('FileVersion', '{VERSION}'), StringStruct('ProductName', 'STS Studio'), StringStruct('ProductVersion', '{VERSION}'), StringStruct('OriginalFilename', '{name}.exe'), StringStruct('LegalCopyright', 'Copyright (c) 2026 kotek')])]), VarFileInfo([VarStruct('Translation', [1033, 1200])])])",
+                encoding="utf-8",
+            )
+            command += ["--version-file", str(version_file)]
         if entry == "gui" and system in ("windows", "macos"):
             command.append("--windowed")
+            command += [
+                "--icon",
+                str(
+                    ROOT
+                    / "packaging"
+                    / ("sts-studio.ico" if system == "windows" else "sts-studio.icns")
+                ),
+            ]
         if system == "macos":
             command += [
                 "--osx-bundle-identifier",
@@ -113,6 +130,22 @@ def build() -> None:
     if system == "macos":
         shutil.copytree(
             work / "native/sts-studio-gui.app", bundle / "STS Studio.app", symlinks=True
+        )
+        app_bundle = bundle / "STS Studio.app"
+        info_path = app_bundle / "Contents/Info.plist"
+        with info_path.open("rb") as stream:
+            info = plistlib.load(stream)
+        info.update(
+            CFBundleName="STS Studio",
+            CFBundleDisplayName="STS Studio",
+            CFBundleShortVersionString=VERSION,
+            CFBundleVersion=VERSION,
+            LSMinimumSystemVersion="14.0",
+        )
+        with info_path.open("wb") as stream:
+            plistlib.dump(info, stream)
+        subprocess.run(
+            ["codesign", "--force", "--deep", "--sign", "-", str(app_bundle)], check=True
         )
     else:
         shutil.copytree(work / "native/sts-studio-gui", bundle / "gui", symlinks=True)

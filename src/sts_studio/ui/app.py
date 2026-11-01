@@ -4,10 +4,14 @@ from PySide6 import QtCore as C
 from PySide6 import QtGui as G
 from PySide6 import QtWidgets as Q
 
+from .. import __version__, root
 from .window import Window
 
 
 def configure(app: Q.QApplication) -> None:
+    app.setApplicationName("STS Studio")
+    app.setApplicationVersion(__version__)
+    app.setWindowIcon(G.QIcon(str(root / "sts-studio.svg")))
     app.setStyle("Fusion")
     app.setFont(G.QFont("Noto Sans CJK JP", 9))
     app.setStyleSheet(
