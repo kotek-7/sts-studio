@@ -17,7 +17,7 @@ def generated():
         "",
         "機能ごとの入力、実行手順、成功条件、エラー処理を定義します。機械可読定義は `spec/features.json`、設計は [DESIGN.md](DESIGN.md)、メモリ表は [REGISTERS.md](REGISTERS.md) を参照してください。",
         "",
-        "検証範囲は [VALIDATION.md](VALIDATION.md) に記載しています。",
+        "自動テストと実行方法は [VALIDATION.md](VALIDATION.md) を参照してください。",
         "",
     ]
     matrix = [

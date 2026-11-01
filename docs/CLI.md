@@ -1,10 +1,9 @@
 # CLIの使い方
 
-ソースからは `./run.sh cli`、インストール後は `sts-studio` で実行します。Qtやディスプレイは起動しません。GUIの接続を閉じてから同じポートを開いてください。CLIはサーボ操作・設定のServiceをGUIと共有します。
+Ubuntuのdebでは`sts-studio`、展開版では`cli/`内の実行ファイルを使います。ソースからは、プロジェクトのディレクトリで`uv run --locked python -m sts_studio cli`を実行します。GUIの接続を閉じてから同じポートを開いてください。
 
 ```sh
-cd ~/dev/sts-studio
-uv run --locked ./run.sh cli --help
+uv run --locked python -m sts_studio cli --help
 sts-studio --help
 sts-studio --version
 ```

@@ -1,4 +1,4 @@
-"""Pure scheduling/statistics models; no I/O and no sleeping inside the UI thread."""
+"""Pure scheduling and communication statistics models."""
 
 from __future__ import annotations
 

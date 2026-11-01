@@ -8,11 +8,11 @@ STS Studio servo configuration and monitoring application.
 
 ## __main__.py
 
-Keep the desktop default while loading CLI without Qt.
+Desktop and headless CLI entry points.
 
 ## automation.py
 
-Pure scheduling/statistics models; no I/O and no sleeping inside the UI thread.
+Pure scheduling and communication statistics models.
 
 ### Pattern
 
@@ -185,7 +185,7 @@ Servo operations. No Qt dependencies; effects and partial failures are explicit.
 
 ## simulator.py
 
-Explicit virtual bus. Never imports serial or opens a /dev device.
+In-memory servo and adapter simulation.
 
 ### VirtualLink
 
@@ -297,7 +297,7 @@ Pwm workflows and their local state.
 
 ## ui/signals.py
 
-Explicit Qt clicked(bool) boundary; no callable-signature inspection.
+Qt clicked(bool) slots and action error reporting.
 
 ### ClickAction
 

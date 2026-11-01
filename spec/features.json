@@ -6,7 +6,7 @@
       "id": "CON-01",
       "title": "シリアル接続",
       "inputs": {
-        "port": "既存の /dev/tty*",
+        "port": "シリアルポート名（Linux: /dev/ttyUSB0、Windows: COM3、macOS: /dev/cu.*）",
         "baud": "protocol.json port.baud_choices",
         "parity": "N/O/E",
         "timeout_ms": "5..5000, default50"
@@ -330,7 +330,7 @@
       "preconditions": "接続中。対応アダプターID253への操作を利用者が明示選択",
       "effect": "PWMタブでID253 address9=0、他タブで9=1。パルスはaddress33 u16LE、enableはaddress35 u8。スライダーとプリセットに対応",
       "postconditions": "送信済み（出力未確認）と表示。サーボID253とは別のadapter制御として区別",
-      "failure": "実機アダプターでの出力は未検証。モード切替をタブ表示だけで自動送信しない",
+      "failure": "通信失敗を表示。モード設定とパルス送信の結果は送信済みとして扱い、実際の出力状態は確認しない",
       "implementation": "service.Service.pwm",
       "test": "test_tab_mode_switch_and_pwm_stop",
       "status": "implemented"

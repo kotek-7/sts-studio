@@ -1,12 +1,12 @@
-# 設計・実装契約
+# アーキテクチャと通信仕様
 
-この文書は再実装可能な設計契約です。画面の見た目だけでなく、入力から通信、状態更新、永続化までを定義します。個々の機能契約は `spec/features.json`、数値とバイト配置は `spec/catalog.json` / `spec/protocol.json` を正本とします。
+STS Studioの状態管理、シリアル通信、ファイル形式を説明します。機能ごとの動作は `spec/features.json`、数値とバイト配置は `spec/catalog.json` / `spec/protocol.json` を正本とします。
 
 ## 1. 対象環境と構成
 
 Linux・Windows・macOS向けのQtアプリケーションです。USBシリアルを介してFEETECH SCSバスへ接続します。STS用の動作・設定・監視機能を中心とし、機種とファームウェアの組み合わせからメモリ表を選択します。Python 3.12、PySide6、pyserialを使用します。
 
-デモモードでは仮想サーボID1/2を使用し、物理ポートを開きません。通信・ファイル・GUIを自動テストしています。実機での電気的挙動、電源断後の設定保持、PWM波形は未検証です。
+デモモードでは仮想サーボID1/2を使用し、物理ポートを開きません。テスト構成は [開発時の検査](VALIDATION.md) を参照してください。
 
 ## 2. コンポーネントとデータ所有権
 
@@ -31,7 +31,7 @@ Linux・Windows・macOS向けのQtアプリケーションです。USBシリア�
 | ui.signals | clicked(bool) | 明示的なSlot、例外報告 | UIメッセージ |
 | simulator.VirtualLink | 同じexchangeインターフェース | 仮想ID1/2とアダプター | 物理ポートへのアクセスなし |
 
-`Servo` = {sid:int, model:str, profile:Profile|None, header:bytes[9]}。firmware表示はheader[0].header[1]、モデル識別はheader[3]/header[4]。header[5]を検索IDに上書きして真のIDと決めつけません。
+`Servo` = {sid:int, model:str, profile:Profile|None, header:bytes[9]}。firmware表示はheader[0].header[1]、モデル識別はheader[3]/header[4]。header[5]は応答に含まれる値のまま保持します。
 
 `Snapshot` = {id:int, raw:bytes, values:dict[address,int], error:int, goal:int|None}。
 `Feedback` = {id:int, values:dict[address,int], error:int, goal:int|None, timestamp:Unix seconds}。
@@ -43,7 +43,7 @@ Linux・Windows・macOS向けのQtアプリケーションです。USBシリア�
 - **CONNECTED**: portは開いているが、既知profileのサーボ未選択。検索、ID指定、アダプター操作が可能。
 - **READY**: 選択IDとprofileが存在。単一の操作を開始できる。複数選択時、表示・設定の対象は選択IDを昇順にした先頭。動作指令の対象は選択集合全体。
 - **BUSY**: 1個の前景I/Oジョブが実行中。接続条件、対象選択、追加動作を無効にする。モニターのtickは捨て、未送信動作を蓄積しない。
-- **AUTO**: Sweep/Stepの対象ID、速度、加速度、Time、方式、周期を開始時に固定。UI値を書き換えても走行中の契約を変えない。
+- **AUTO**: Sweep/Stepの対象ID、速度、加速度、Time、方式、周期を開始時に固定。実行中にUI値を変更しても、開始時の設定を使用する。
 - **TESTING**: フィードバックREADを周期的に発行して統計を集計。通常モニターと同時送信しない。
 - **停止未確認**は別の集合 `uncertain` として保持する。単にDISCONNECTEDにすれば停止したという扱いにはしない。
 
@@ -66,7 +66,7 @@ ACTION / RESETはparameterなし。
 
 ## 5. メモリ表の解釈
 
-実行時に使うのはcatalog.jsonであり、表のアドレスをUIとサービスで二重定義しません。`r`は読取専用、`rw`は書込可能、`d`は表示専用属性として扱い書込を許可しません。
+レジスタのアドレスと属性はcatalog.jsonから読み込み、UIとサービスで共有します。`r`は読取専用、`rw`は書込可能、`d`は表示専用属性として扱い書込を許可しません。
 
 2byte値はprofileのendianに従います。方向bitが設定されている値は二の補数ではなくsign-magnitudeです。正値の有効bitはsign_bitより下、負値はabs(value) | (1 << sign_bit)。受信側も下位bitを絶対値に使います。
 
@@ -74,7 +74,7 @@ ACTION / RESETはparameterなし。
 
 STSの位置オフセットaddress31は符号bit11を使用します。波形・メモリ表の電流はraw値表示で、機種をまたいで6.5mAなどの換算を断定しません。
 
-未知FWは既知STS表へ勝手にフォールバックしません。`model`がSTS3215でもfirmware範囲が不一致ならprofile=Noneで書き込み禁止です。
+FW範囲が一致するプロファイルだけを使用します。`model`がSTS3215でもfirmware範囲が不一致ならprofile=Noneで書き込み禁止です。
 
 ## 6. 書き込み・復元のトランザクション
 
@@ -102,15 +102,13 @@ Writeは対象順に送信。Syncは入力と制御アドレスの一致を先�
 
 設定ファイルは44byte: start=0, count=40, memory[0:40], trailer[2]。trailerの意味は未解明です。読込・再保存ではその2byteを保持し、新規出力は0000を使います。start=0/count=40以外は復元適用を拒否します。モデル/FW byteも読取専用の識別情報として比較し、直接書き戻しません。
 
-設定ファイルの拡張子は `.xdat` です。
-
 ### CSV / TXT
 
-通常CSVはtimestamp,id,position_steps,goal_steps,load_raw,speed_steps_s,current_raw,temperature_C,voltage_V,error。電圧だけVへ換算。TXTは `No,Pos,Gol,Ft,V,C,T,Vol` header、1始まりの連番、末尾ENDの9列data、CRLFを使用します。同じ測定値列を使ったバイト単位比較テストを行います。保存間隔は1..86400秒です。停止まで記録し、指定間隔ごとに追記、停止時に残りをflushします。データの欠測を0で隠さないため、通常CSVを推奨します。
+通常CSVはtimestamp,id,position_steps,goal_steps,load_raw,speed_steps_s,current_raw,temperature_C,voltage_V,error。電圧だけVへ換算。TXTは `No,Pos,Gol,Ft,V,C,T,Vol` header、1始まりの連番、末尾ENDの9列data、CRLFを使用します。保存間隔は1..86400秒です。停止まで記録し、指定間隔ごとに追記、停止時に残りをflushします。データの欠測を0で隠さないため、通常CSVを推奨します。
 
 ### Firmware
 
-bin/fbin/mbin/xbinはサイズとSHA256のみ。HEXは各レコードのcolon、byte count、checksum、type、拡張address、重複領域、EOFを検証します。検証が成功してもそのサーボで使えるとは判定しません。検査後に送信を始めるコードはありません。
+bin/fbin/mbin/xbinはサイズとSHA256のみ。HEXは各レコードのcolon、byte count、checksum、type、拡張address、重複領域、EOFを検証します。検証が成功してもそのサーボで使えるとは判定しません。ファームウェアの転送には対応していません。
 
 ## 9. 性能・上限・スレッド
 
@@ -122,7 +120,7 @@ UI threadはwidgetと画面用cacheだけを変更します。シリアルport�
 
 `spec/features.json` が機能契約、`spec/catalog.json` がレジスタとモデル、`spec/protocol.json` が通信仕様と検証ベクトルを定義します。これらを編集後、`python3 tools/render_spec.py` で文書を生成します。
 
-`uv run --locked python tools/check.py` で整形、lint、全ソース型検査、仕様生成差分、pytestを検査します。通信・サービス・実行基盤には未型付け関数と未型付け呼出の禁止を追加しています。GUIの動的Qt境界は段階的な型付けです。`uv run --locked python tools/package.py` でdebとソースアーカイブを生成します。バージョンの正本は `pyproject.toml` です。
+`uv run --locked python tools/check.py` で整形、lint、全ソース型検査、仕様生成差分、pytestを検査します。通信・サービス・実行基盤では、未型付け関数と未型付け呼出を禁止します。GUIの一部には動的な型を使用します。各OSの配布形式とビルド方法は [リリース手順](RELEASING.md) を参照してください。バージョンの正本は `pyproject.toml` です。
 
 依存方向、開発コマンド、Git運用と型検査の範囲は [DEVELOPMENT.md](DEVELOPMENT.md) を参照してください。
 
@@ -148,11 +146,10 @@ Debug属性とメモリ表は別管理です。メモリ表にないFWでもDebu
 
 周期監視中も操作欄の有効状態とREADY表示を維持します。監視中の設定保存・切断などはGUIスレッドの待機列に入れ、通信完了後に直列実行します。STOPは待機中の操作を破棄し、停止処理を優先します。設定表は変更のあるセルだけを書き換え、編集中の値を維持します。
 
-
 ## 13. 実行管理の不変条件
 
 Workerは同時に1件しか受け付けません。各要求のcancel Eventは独立し、次の要求で前のcancelを使い回しません。ExecutorはJobのtokenが一致した完了だけ受け取り、重複・古い完了を無視します。描画コールバックで例外が起きても実行中状態を解除し、操作名とエラーを報告します。
 
-周期監視はJobKind.MONITORとして分類し、画面に表示する日本語の操作名から操作可否を推測しません。監視中のボタン操作は最大32件まで待機し、超過時はその操作を受け付けずメッセージを表示します。STOP・切断・終了では待機操作を破棄します。STOPの直後に閉じた場合は、すでに要求された停止処理の完了を待って閉じます。
+周期監視はJobKind.MONITORとして分類し、ジョブの種別に応じて操作可否を判定します。監視中のボタン操作は最大32件まで待機し、超過時はその操作を受け付けずメッセージを表示します。STOP・切断・終了では待機操作を破棄します。STOPの直後に閉じた場合は、すでに要求された停止処理の完了を待って閉じます。
 
-Qtのclicked(bool)はClickActionの明示的なSlot(bool)で受けます。不要なbool引数をここで消費し、トルクのチェック状態が必要な操作はboolを受け取る通常のハンドラに接続します。関数シグネチャを調べて引数を切り落とすデコレータは使用しません。
+Qtのclicked(bool)はClickActionの明示的なSlot(bool)で受けます。不要なbool引数をここで消費し、トルクのチェック状態が必要な操作はboolを受け取る通常のハンドラに接続します。

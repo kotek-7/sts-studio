@@ -1,6 +1,6 @@
 [project]
 name = "sts-studio"
-version = "0.6.0"
+version = "0.6.1"
 description = "FEETECH servo configuration and monitoring with a desktop GUI and JSON CLI"
 requires-python = ">=3.12,<3.13"
 dependencies = ["PySide6-Essentials>=6.8,<7", "pyserial>=3.5,<4"]

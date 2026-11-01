@@ -17,7 +17,7 @@ For a release, update the version, changelog, and `packaging/release-notes.md`; 
 
 The tag workflow reruns the checks and native builds, downloads the corresponding dependency source archives, and uploads all assets to a draft GitHub Release. It publishes only after every required file and checksum is present. Existing releases are not overwritten. A failed upload leaves a draft for inspection; remove that incomplete draft before rerunning the release job. Do not move a published tag.
 
-Windows executables are unsigned. macOS apps use ad-hoc signatures, without Developer ID or notarization. No signing secrets are required. Binary smoke tests run with a virtual bus and do not access physical devices.
+Windows executables are unsigned. macOS apps use ad-hoc signatures, without Developer ID or notarization. Binary smoke tests run with a virtual bus and do not access physical devices.
 
 ## 日本語
 

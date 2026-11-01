@@ -1,4 +1,4 @@
-"""Explicit Qt clicked(bool) boundary; no callable-signature inspection."""
+"""Qt clicked(bool) slots and action error reporting."""
 
 import logging
 from collections.abc import Callable

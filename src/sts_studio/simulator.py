@@ -1,4 +1,4 @@
-"""Explicit virtual bus. Never imports serial or opens a /dev device."""
+"""In-memory servo and adapter simulation."""
 
 import time
 

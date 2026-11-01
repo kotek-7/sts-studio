@@ -2,7 +2,7 @@
 
 機能ごとの入力、実行手順、成功条件、エラー処理を定義します。機械可読定義は `spec/features.json`、設計は [DESIGN.md](DESIGN.md)、メモリ表は [REGISTERS.md](REGISTERS.md) を参照してください。
 
-検証範囲は [VALIDATION.md](VALIDATION.md) に記載しています。
+自動テストと実行方法は [VALIDATION.md](VALIDATION.md) を参照してください。
 
 ## CON-01: シリアル接続
 
@@ -12,7 +12,7 @@
 
 | 項目 | 型・範囲・既定値 |
 |---|---|
-| port | 既存の /dev/tty* |
+| port | シリアルポート名（Linux: /dev/ttyUSB0、Windows: COM3、macOS: /dev/cu.*） |
 | baud | protocol.json port.baud_choices |
 | parity | N/O/E |
 | timeout_ms | 5..5000, default50 |
@@ -465,7 +465,7 @@
 
 **成功条件・後状態**: 送信済み（出力未確認）と表示。サーボID253とは別のadapter制御として区別
 
-**エラー・中止**: 実機アダプターでの出力は未検証。モード切替をタブ表示だけで自動送信しない
+**エラー・中止**: 通信失敗を表示。モード設定とパルス送信の結果は送信済みとして扱い、実際の出力状態は確認しない
 
 **実装**: `service.Service.pwm` / **テスト**: `test_tab_mode_switch_and_pwm_stop`
 

@@ -1,4 +1,4 @@
-"""Keep the desktop default while loading CLI without Qt."""
+"""Desktop and headless CLI entry points."""
 
 import sys
 

@@ -14,7 +14,7 @@ GUIはPySide6、USBシリアル通信はpyserialを使用します。ThreadPoolE
 
 ## 責務と依存
 
-以下の矢印は実行順ではなく、実行時のコード依存です。featureコントローラはQt画面に依存しますが、通信・ファイル・サーボ操作はQtをimportしません。
+矢印は実行時のコード依存を表します。featureコントローラはQt画面に依存しますが、通信・ファイル・サーボ操作はQtをimportしません。
 
 ```mermaid
 flowchart TD
@@ -43,9 +43,9 @@ flowchart TD
 | 実行・待機・完了の契約 | `runtime/executor.py`、`jobs.py` |
 | 通信結果の形・リンクの契約 | `contracts.py` |
 
-`Session` が接続・選択・停止確認の正本です。`Service` が検出済みサーボと登録指令の正本です。自動動作と最新手動指令はMotionController、記録はMonitoringController、通信統計はDiagnosticsControllerが所有します。Windowへ機能処理を戻さず、所属コントローラを変更します。
+`Session` が接続・選択・停止確認の正本です。`Service` が検出済みサーボと登録指令の正本です。自動動作と最新手動指令はMotionController、記録はMonitoringController、通信統計はDiagnosticsControllerが所有します。機能の変更は、それぞれの状態を所有するコントローラで行います。
 
-機能間の連携はWindow経由の明示的な参照で行います。コントローラのWindow型参照はTYPE_CHECKING内だけに置き、実行時の循環importを避けます。汎用イベントバスやDIコンテナは導入していません。
+機能間の連携はWindow経由の明示的な参照で行います。コントローラのWindow型参照はTYPE_CHECKING内だけに置き、実行時の循環importを避けます。
 
 ## 型・整形・テスト
 
@@ -57,9 +57,9 @@ uv run --locked python tools/render_spec.py
 QT_QPA_PLATFORM=offscreen uv run --locked pytest -q
 ```
 
-mypyは全ソースを対象に、未注釈の関数本体も検査します。通信、catalog、Service、Worker、runtime、純粋な動作モデル、Qtスロット境界では未注釈の関数定義・呼出を禁止し、Anyの戻り値も検出します。GUIの一部コールバックとJSONメタデータには動的な型が残っており、全コードがstrict型付け済みという意味ではありません。通信結果はTypedDict、接続はdataclass、最新指令はdataclassのunion、自動動作・記録はTypedDictで表現します。
+mypyは全ソースを対象に、未注釈の関数本体も検査します。通信、catalog、Service、Worker、runtime、純粋な動作モデル、Qtスロット境界では未注釈の関数定義・呼出を禁止し、Anyの戻り値も検出します。GUIの一部コールバックとJSONメタデータには動的な型を使用します。通信結果はTypedDict、接続はdataclass、最新指令はdataclassのunion、自動動作・記録はTypedDictで表現します。
 
-既存のunittest資産はpytestから実行します。新しいGUIシナリオはpytest-qtでボタンを実際にクリックし、Qtイベント中の例外も検出します。実機の代わりにVirtualLinkとLinux PTYを使います。通信の仕様を変える場合はパケットの契約テストも変更します。
+テストはpytestから実行します。GUIシナリオはpytest-qtでボタンを実際にクリックし、Qtイベント中の例外も検出します。実機の代わりにVirtualLinkとLinux PTYを使います。通信の仕様を変える場合はパケットの契約テストも変更します。
 
 ## GitとCI
 
@@ -74,10 +74,9 @@ git diff --check
 
 ## 配布
 
-`uv run --locked python tools/package.py` はバージョンをpyprojectから読み、debとソースアーカイブを生成します。配布物にはPython・Qt・pyserialを同梱します。Windows・macOS向けも対象OS上でビルドします。[リリース手順](RELEASING.md)を参照してください。ソースアーカイブにはuv.lock・開発設定・テストを含めます。
+`uv run --locked python tools/package.py` は対象OS上で実行し、Linuxではtar.gzとdeb、WindowsとmacOSではZIPを生成します。配布物にはPython・Qt・pyserialを同梱し、バージョンは`pyproject.toml`から読み込みます。`--source`を付けると、uv.lock・開発設定・テストを含むソースアーカイブと依存ライブラリのソースも配布先へ出力します。[リリース手順](RELEASING.md)を参照してください。
 
 参考: [uvプロジェクト管理](https://docs.astral.sh/uv/guides/projects/)、[Ruff設定](https://docs.astral.sh/ruff/configuration/)、[mypy設定](https://mypy.readthedocs.io/en/stable/config_file.html)、[uvとGitHub Actions](https://docs.astral.sh/uv/guides/integration/github/)。
-
 
 ## CLIの追加先
 

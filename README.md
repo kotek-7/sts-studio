@@ -7,7 +7,7 @@ FEETECH Debug Tool
 [![Build](https://github.com/kotek-7/sts-studio/actions/workflows/check.yml/badge.svg)](https://github.com/kotek-7/sts-studio/actions/workflows/check.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-STS Studio configures and monitors FEETECH serial bus servos. It started from wanting a Linux tool for the tasks covered by the FEETECH debugging software in [Akizuki Denshi's servo guide](https://akizukidenshi.com/goodsaffix/feetech_digital_servo_20220729.pdf).
+STS Studio configures and monitors FEETECH serial bus servos. It was built to provide a Linux tool for the servo operations described in [Akizuki Denshi's servo guide](https://akizukidenshi.com/goodsaffix/feetech_digital_servo_20220729.pdf).
 
 Find connected servos, edit registers, send position and speed commands, and save feedback as CSV or TXT. The desktop app includes plots and a demo mode. A separate CLI returns JSON for scripts.
 

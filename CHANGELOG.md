@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+- Correct source CLI and native packaging instructions.
+- Clarify the architecture reference and PWM tab-switching behavior.
+- Include the updated guides in all platform packages.
+
 ## 0.6.0
 
 - Add Windows and macOS bundles alongside the Ubuntu package. Bundles include Python and Qt, with separate GUI and CLI launchers.
