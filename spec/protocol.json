@@ -1,0 +1,156 @@
+{
+  "schema_version": 1,
+  "name": "FEETECH SCS bus protocol",
+  "frame": {
+    "header": [
+      255,
+      255
+    ],
+    "layout": [
+      "id:u8",
+      "length:u8=params+2",
+      "instruction_or_error:u8",
+      "parameters:bytes",
+      "checksum:u8"
+    ],
+    "checksum": "~sum(id..last_parameter) & 255",
+    "maximum_packet_bytes": 250,
+    "individual_ids": [
+      0,
+      253
+    ],
+    "broadcast_id": 254
+  },
+  "instructions": {
+    "ping": 1,
+    "read": 2,
+    "write": 3,
+    "reg_write": 4,
+    "action": 5,
+    "reset": 6,
+    "sync_write": 131
+  },
+  "port": {
+    "baud_choices": [
+      1000000,
+      500000,
+      250000,
+      256000,
+      128000,
+      115200,
+      76800,
+      57600,
+      56000,
+      38400,
+      19200,
+      14400,
+      9600,
+      4800
+    ],
+    "parities": [
+      "N",
+      "O",
+      "E"
+    ],
+    "data_bits": 8,
+    "stop_bits": 1,
+    "timeout_ms_default": 50,
+    "timeout_ms_range": [
+      5,
+      5000
+    ],
+    "default_baud": 115200
+  },
+  "sts_baud_codes": [
+    1000000,
+    500000,
+    250000,
+    128000,
+    115200,
+    76800,
+    57600,
+    38400
+  ],
+  "unknowns": [
+    "Firmware bootloader/framing/authentication are not established",
+    "Adapter PWM min/max parameter addresses not established",
+    "RESET post-state/default baud and firmware-specific semantics not verified on physical servo"
+  ],
+  "test_vectors": [
+    {
+      "id": "search",
+      "frame": "ff ff 01 04 02 00 09 ef",
+      "meaning": "Read ID1 address0 length9 for identification"
+    },
+    {
+      "id": "feedback",
+      "frame": "ff ff 01 04 02 38 11 af",
+      "meaning": "Read ID1 address56 length17"
+    },
+    {
+      "id": "write",
+      "frame": "ff ff 01 0a 03 29 11 d2 04 c8 01 41 01 d6",
+      "meaning": "ID1 address41: acceleration17, position1234, time456, speed321"
+    },
+    {
+      "id": "sync",
+      "frame": "ff ff fe 0c 83 29 07 01 11 d2 04 c8 01 41 01 4f",
+      "meaning": "Broadcast sync write address41 width7, ID1 same payload"
+    },
+    {
+      "id": "registered",
+      "frame": "ff ff 01 0a 04 29 11 d2 04 c8 01 41 01 d5",
+      "meaning": "Registered write, no immediate motion"
+    },
+    {
+      "id": "action",
+      "frame": "ff ff fe 02 05 fa",
+      "meaning": "Broadcast execute registered writes"
+    },
+    {
+      "id": "unlock",
+      "frame": "ff ff 01 04 03 37 00 c0",
+      "meaning": "EEPROM unlock"
+    },
+    {
+      "id": "parameter",
+      "frame": "ff ff 01 04 03 15 37 ab",
+      "meaning": "Position P=55"
+    },
+    {
+      "id": "lock",
+      "frame": "ff ff 01 04 03 37 01 bf",
+      "meaning": "EEPROM lock"
+    },
+    {
+      "id": "reset",
+      "frame": "ff ff 01 02 06 f6",
+      "meaning": "Reset request; completion and resulting communication settings require device verification"
+    },
+    {
+      "id": "pwm_mode",
+      "frame": "ff ff fd 04 03 09 00 f2",
+      "meaning": "PWM adapter ID253, address9=0: PWM mode"
+    },
+    {
+      "id": "bus_mode",
+      "frame": "ff ff fd 04 03 09 01 f1",
+      "meaning": "PWM adapter ID253, address9=1: bus mode"
+    },
+    {
+      "id": "pwm_pulse",
+      "frame": "ff ff fd 05 03 21 dc 05 f8",
+      "meaning": "PWM adapter address33, 1500us little endian"
+    },
+    {
+      "id": "pwm_on",
+      "frame": "ff ff fd 04 03 23 01 d7",
+      "meaning": "PWM adapter address35=1"
+    },
+    {
+      "id": "pwm_off",
+      "frame": "ff ff fd 04 03 23 00 d8",
+      "meaning": "PWM adapter address35=0"
+    }
+  ]
+}

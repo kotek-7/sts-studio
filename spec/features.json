@@ -1,0 +1,418 @@
+{
+  "schema_version": 1,
+  "scope": "STS Studio サーボ設定・監視アプリケーション",
+  "features": [
+    {
+      "id": "CON-01",
+      "title": "シリアル接続",
+      "inputs": {
+        "port": "既存の /dev/tty*",
+        "baud": "protocol.json port.baud_choices",
+        "parity": "N/O/E",
+        "timeout_ms": "5..5000, default50"
+      },
+      "preconditions": "DISCONNECTED。実機/デモを明示選択",
+      "effect": "8 data bits / 1 stop bit、RTS/DTR false、排他open。初期baud115200。PWMタブで接続した場合はアダプターをPWMモードへ設定",
+      "postconditions": "CONNECTED。接続設定をロック",
+      "failure": "open失敗はDISCONNECTEDのまま。権限/占有/切断の例外を表示",
+      "implementation": "wire.SerialLink",
+      "test": "test_connect_has_no_writes",
+      "status": "implemented"
+    },
+    {
+      "id": "SCAN-01",
+      "title": "ID検索",
+      "inputs": {
+        "first": "0..253",
+        "last": "first..253"
+      },
+      "preconditions": "CONNECTED。動作・他I/Oなし",
+      "effect": "指定範囲に253が含まれる場合はID253を先に識別し、残りのIDへREAD address0 length9を昇順送信。Timeoutは未検出として継続",
+      "postconditions": "検出一覧更新。手動選択でREADY。検索だけではトルクや設定を書かない",
+      "failure": "キャンセルは進行中requestの完了/timeout後。破損/切断は停止",
+      "implementation": "service.Service.scan",
+      "test": "test_scan_read_not_ping",
+      "status": "implemented"
+    },
+    {
+      "id": "READ-01",
+      "title": "モデル別メモリ表",
+      "inputs": {
+        "id": "検出した個別ID"
+      },
+      "preconditions": "READYかつprofile既知",
+      "effect": "設定タブでEEPROM0..39とRAM40..最終定義アドレスを周期READ。編集中のEdit列を保持して現在値を更新。操作タブの選択時には全メモリを読まない",
+      "postconditions": "表に実読取値。default列の値を実機値として使わない",
+      "failure": "未知FWは識別情報だけ表示し書込禁止。異常ビットを保持",
+      "implementation": "service.Service.snapshot",
+      "test": "test_programming_refresh_preserves_edit",
+      "status": "implemented"
+    },
+    {
+      "id": "READ-02",
+      "title": "フィードバック",
+      "inputs": {
+        "id": "選択中ID",
+        "period_ms": "20..5000, default50"
+      },
+      "preconditions": "READY、監視ON、他I/Oなし",
+      "effect": "profileのfeedback_start..feedback_endを1回READ。標準STSは56から17byte。Goalは同じ応答のoffset11/12をsign15で復号。statusは応答パケットのERROR",
+      "postconditions": "位置/速度/負荷/電流/温度/電圧/移動/状態。電圧はraw/10。他は原則生値。記録にtimestamp/id/errorを付与",
+      "failure": "timeout時は過去値であることを表示し、設定周期で再試行。設定保存の失敗だけではモニターをOFFにしない",
+      "implementation": "service.Service.feedback",
+      "test": "test_goal_is_feedback_word_not_target",
+      "status": "implemented"
+    },
+    {
+      "id": "CTRL-01",
+      "title": "Write・Set",
+      "inputs": {
+        "ids": "選択ID集合",
+        "acc": "0..254",
+        "goal": "-32766..32766",
+        "speed": "-32766..32766",
+        "time_raw": "0..65535"
+      },
+      "preconditions": "READY、profile.motion_supported、明示的な送信操作",
+      "effect": "profile.control_startへ7byte: acc,u16(goal sign15),u16(time raw),u16(speed sign15)。Write命令3。SCSはbig endianで非負goal/speed",
+      "postconditions": "各対象へ指令を送信。到達・実行完了を意味しない。確認用の追加READは送らない",
+      "failure": "一部失敗は停止・エラー。再送しない。Timeのモード依存解釈は推測しない",
+      "implementation": "service.Service.control",
+      "test": "test_write_vector",
+      "status": "implemented"
+    },
+    {
+      "id": "CTRL-02",
+      "title": "Sync Write",
+      "inputs": {
+        "ids": "重複なし1..30台",
+        "payload": "CTRL-01と同じ"
+      },
+      "preconditions": "READY。全台のpayloadを送信前検証",
+      "effect": "ID254 instruction131、共通control_start、width7、各(id,payload)。250byte以内の1フレーム",
+      "postconditions": "1フレームの同期指令を送信。実行・到達完了を保証しない。追加READなし",
+      "failure": "異なる制御アドレスの混在、30台超、重複、不正payloadは送信前拒否",
+      "implementation": "service.Service.control",
+      "test": "test_sync_vector",
+      "status": "implemented"
+    },
+    {
+      "id": "CTRL-03",
+      "title": "Reg Write",
+      "inputs": {
+        "ids": "選択ID集合",
+        "payload": "CTRL-01と同じ"
+      },
+      "preconditions": "READY",
+      "effect": "各IDへinstruction4を送信しpending集合を更新。追加READなし",
+      "postconditions": "登録のみ。明示Actionまで実行しない",
+      "failure": "登録途中の失敗でpendingを捨てない。Actionは同じバス上の他ソフトの登録にも作用する",
+      "implementation": "service.Service.control",
+      "test": "test_registered_not_executed",
+      "status": "implemented"
+    },
+    {
+      "id": "CTRL-04",
+      "title": "Action",
+      "inputs": {},
+      "preconditions": "接続中、明示的な実行操作",
+      "effect": "ID254 instruction5で一斉実行を要求。追加READなし",
+      "postconditions": "送信後にローカルpendingを解除。実機の実行完了確認ではない",
+      "failure": "送信失敗時はpending保持。自動再送なし",
+      "implementation": "service.Service.action",
+      "test": "test_action_broadcast",
+      "status": "implemented"
+    },
+    {
+      "id": "CTRL-05",
+      "title": "Torque Enable / OFF",
+      "inputs": {
+        "ids": "選択ID集合",
+        "enabled": "0/1"
+      },
+      "preconditions": "profile既知",
+      "effect": "address40へ0または1を書き込み、読み戻しで確認。ONでは目標位置を書き換えない",
+      "postconditions": "ON/OFF確認済みIDを報告。STOPは自動動作と待機中の手動指令を破棄してOFFを送る。監視ONならFB・記録を継続。PWM中は出力OFFも送信",
+      "failure": "OFF通信失敗は停止未確認と表示。ソフト停止は物理非常停止ではない",
+      "implementation": "service.Service.set_torque",
+      "test": "test_stop_keeps_feedback_and_recording",
+      "status": "implemented"
+    },
+    {
+      "id": "CTRL-06",
+      "title": "目標スライダー",
+      "inputs": {
+        "value": "選択profileの位置範囲、STS初期0..4095",
+        "live": "初期ON"
+      },
+      "preconditions": "READY",
+      "effect": "Live ONではスライダー値の変更時に送信。I/O中は最新の値1件だけを保持し、古い指令を蓄積しない",
+      "postconditions": "Live OFFでは入力欄のみ更新。STOPで待機中の指令を破棄",
+      "failure": "忙しい間の変更は送信しない。旧指令をキューに蓄積しない",
+      "implementation": "ui.Window.slider_changed",
+      "test": "test_live_slider_and_stop_discards_waiting_target",
+      "status": "implemented"
+    },
+    {
+      "id": "AUTO-01",
+      "title": "Sweep往復",
+      "inputs": {
+        "start": "目標範囲",
+        "end": "目標範囲",
+        "delay_ms": "10..600000"
+      },
+      "preconditions": "READY、対象IDとwrite方式固定。RegWriteは禁止",
+      "effect": "start,endを交互送信。通信完了後にdelayを待つ。通常モニターと独立した締切で動作する",
+      "postconditions": "停止で次の予約を破棄。最終トルク状態は維持",
+      "failure": "I/O失敗は自動動作停止。停止は今進行中の1指令を取り消せない",
+      "implementation": "automation.Pattern",
+      "test": "test_step_timer_is_independent",
+      "status": "implemented"
+    },
+    {
+      "id": "AUTO-02",
+      "title": "Step往復",
+      "inputs": {
+        "start": "目標範囲",
+        "end": "目標範囲",
+        "step": "1..32766",
+        "delay_ms": "10..600000"
+      },
+      "preconditions": "AUTO-01同様",
+      "effect": "最初にstartからstepを加減した値を送信。端点を跨いだ時に向きを反転する。端点を超える1回の指令を含む",
+      "postconditions": "例:1000..1100/step30は1030,1060,1090,1120,1090,1060,1030,1000…",
+      "failure": "step0、start=endは開始前拒否",
+      "implementation": "automation.Pattern",
+      "test": "test_step_observed_sequence",
+      "status": "implemented"
+    },
+    {
+      "id": "PLOT-01",
+      "title": "複数系列・範囲・ズーム",
+      "inputs": {
+        "series": "position/goal/load/speed/current/temperature/voltage",
+        "window_s": "1..600",
+        "offset_s": "0..600",
+        "lower_upper": "任意有限値 lower<upper またはauto"
+      },
+      "preconditions": "取得サンプルがある",
+      "effect": "位置とGoalは左軸0..4096/position_divisor、その他は右軸±1000。速度はspeed_multiplierを適用。左右の軸を表示。範囲・横窓を変更できる",
+      "postconditions": "表示変更は通信を発生しない。単位は凡例/表記通り",
+      "failure": "空データは空グラフ。不正な縦範囲はautoへ",
+      "implementation": "ui.Trend",
+      "test": "test_plot_bounds",
+      "status": "implemented"
+    },
+    {
+      "id": "DATA-01",
+      "title": "周期保存記録・Export・Empty",
+      "inputs": {
+        "flush_interval_seconds": "1..86400",
+        "path": "利用者選択",
+        "format": "CSV / TXT"
+      },
+      "preconditions": "READY、監視ON。記録開始を明示",
+      "effect": "既定はrecord.txt。CSVも選択可能。最大100000件保持。指定間隔で追記し停止時にflush。TXT headerはNo,Pos,Gol,Ft,V,C,T,Vol、1始まり連番と末尾END、CRLF。GolはFB内のGoal値",
+      "postconditions": "取得件数を表示。Emptyは記録サンプルとグラフをクリア",
+      "failure": "書込失敗時はサンプルを保持し再保存可能。100000件に達すると記録を停止",
+      "implementation": "files.Recorder",
+      "test": "test_csv_columns",
+      "status": "implemented"
+    },
+    {
+      "id": "PARAM-01",
+      "title": "単一パラメータ保存",
+      "inputs": {
+        "address": "catalog rw行",
+        "value": "catalog limits（-1/-1は格納幅から導出）"
+      },
+      "preconditions": "READY、変更値が明示入力。EEPROMならトルクOFF",
+      "effect": "符号・エンディアン変換。EEPROMはlock読取→0→値→readback→元lock。失敗でも元lock復元を試す",
+      "postconditions": "確定値を再読込し、lockを操作前の値へ復元",
+      "failure": "読取専用・未知profile・型範囲不正は送信前拒否。復元失敗を隠さない",
+      "implementation": "service.Service.write_register",
+      "test": "test_parameter_lock_finally",
+      "status": "implemented"
+    },
+    {
+      "id": "PARAM-02",
+      "title": "ID・通信速度変更",
+      "inputs": {
+        "id": "0..253",
+        "baud_code": "STS 0..7"
+      },
+      "preconditions": "PARAM-01条件。同じバスに重複ID応答なし",
+      "effect": "ID変更後は新ID、速度変更後は対応baudへ追従しreadback。復元先も追従",
+      "postconditions": "選択一覧/表示を更新。別系列のbaud codeは不明として禁止",
+      "failure": "応答消失時は変更成否不明、新接続値を表示。成功扱いしない",
+      "implementation": "service.Service.write_register",
+      "test": "test_id_baud_tracking",
+      "status": "implemented"
+    },
+    {
+      "id": "FILE-01",
+      "title": "Save xdat",
+      "inputs": {
+        "path": "*.xdat"
+      },
+      "preconditions": "READY、STS profile、設定を新規読取",
+      "effect": "[start:u8=0][count:u8=40][memory0..39][trailer:2 bytes=0000]、計44byte",
+      "postconditions": "末尾2byteは読込・再保存時に保持",
+      "failure": "STS以外は未対応として拒否。ファイル書込失敗を表示",
+      "implementation": "files.ParameterImage",
+      "test": "test_xdat_roundtrip",
+      "status": "implemented"
+    },
+    {
+      "id": "FILE-02",
+      "title": "Load・差分プレビュー",
+      "inputs": {
+        "path": "STS *.xdat"
+      },
+      "preconditions": "READY。モデルbytes3/4とFWbytes0/1一致",
+      "effect": "長さ/addressを検証し差分だけ一覧化。選択行をアドレス順適用、ID/baudは末尾。初期ではID/baud選択OFF",
+      "postconditions": "読み込みだけでは送信しない。各行verified、適用済みリストを返す",
+      "failure": "中断/失敗時に自動rollbackしない。適用済み行と失敗行を報告",
+      "implementation": "service.Service.restore",
+      "test": "test_restore_partial_failure",
+      "status": "implemented"
+    },
+    {
+      "id": "RESET-01",
+      "title": "Recovery",
+      "inputs": {
+        "id": "単一選択ID"
+      },
+      "preconditions": "利用者が確認ダイアログで明示実行",
+      "effect": "instruction6を送信",
+      "postconditions": "送信済みのみ表示。対象情報を破棄し再検索を要求",
+      "failure": "工場設定/ID/baudへの復帰は未実機検証。完了とは表示しない",
+      "implementation": "service.Service.reset",
+      "test": "test_recovery_wire_only",
+      "status": "implemented"
+    },
+    {
+      "id": "CAL-01",
+      "title": "STS中点校正",
+      "inputs": {
+        "id": "単一STS ID"
+      },
+      "preconditions": "トルクOFF、異常なし",
+      "effect": "address40に128を送信。50ms後positionを読んで2048±2を検査",
+      "postconditions": "一致時だけ校正確認済み",
+      "failure": "対応FW不明・読戻し不一致は未確認と表示",
+      "implementation": "service.Service.calibration",
+      "test": "test_calibration_verification",
+      "status": "implemented"
+    },
+    {
+      "id": "TEST-01",
+      "title": "通信テスト",
+      "inputs": {
+        "id": "選択ID",
+        "mode": "成功時連続、timeout時50ms待機"
+      },
+      "preconditions": "READY、他自動動作なし",
+      "effect": "モニター周期とは独立してfeedback READを連続実行。各要求の応答時間、試行/成功/timeout、min/mean/max、実TX+RX量/経過時間を集計。GUIには各要求完了時に反映",
+      "postconditions": "停止で集計保持。Clearで統計と表示をクリア",
+      "failure": "timeoutを成功時間へ混ぜない。リンク例外で停止。速度は実効値でbaud推定ではない",
+      "implementation": "automation.CommunicationStats",
+      "test": "test_fast_test_ignores_monitor_period",
+      "status": "implemented"
+    },
+    {
+      "id": "PWM-01",
+      "title": "アダプターPWM手動",
+      "inputs": {
+        "pulse_us": "500..2500",
+        "enabled": "0/1"
+      },
+      "preconditions": "接続中。対応アダプターID253への操作を利用者が明示選択",
+      "effect": "PWMタブでID253 address9=0、他タブで9=1。パルスはaddress33 u16LE、enableはaddress35 u8。スライダーとプリセットに対応",
+      "postconditions": "送信済み（出力未確認）と表示。サーボID253とは別のadapter制御として区別",
+      "failure": "実機アダプターでの出力は未検証。モード切替をタブ表示だけで自動送信しない",
+      "implementation": "service.Service.pwm",
+      "test": "test_tab_mode_switch_and_pwm_stop",
+      "status": "implemented"
+    },
+    {
+      "id": "PWM-02",
+      "title": "PWM自動往復・ステップ",
+      "inputs": {
+        "min_us": "500..2500",
+        "max_us": "min..2500",
+        "delay_ms": "10..600000",
+        "step_us": "1..2000"
+      },
+      "preconditions": "PWM-01条件",
+      "effect": "AUTOのスケジューラからpulse指令。min/maxはソフトウェア側の出力範囲制限",
+      "postconditions": "停止で予約解除。明示OFFで出力停止指令",
+      "failure": "Min/Maxはソフトウェアの出力範囲。アダプターへの永続設定には未対応",
+      "implementation": "automation.Pattern",
+      "test": "test_pwm_pattern_bounds",
+      "status": "implemented"
+    },
+    {
+      "id": "FW-01",
+      "title": "ファームウェアを開く・検査",
+      "inputs": {
+        "path": "hex/bin/fbin/mbin/xbin"
+      },
+      "preconditions": "ローカルファイルを明示選択",
+      "effect": "サイズ/SHA256を表示。Intel HEXの長さ・checksum・record型・EOF・重複addressを検査",
+      "postconditions": "検査結果のみ。ファイル内容を実行しない",
+      "failure": "不正HEXは拒否。暗号化/機種適合性は判定不可",
+      "implementation": "files.inspect_firmware",
+      "test": "test_hex_validation",
+      "status": "implemented"
+    },
+    {
+      "id": "FW-02",
+      "title": "Upgrade送信",
+      "inputs": {},
+      "preconditions": "対象機器の更新方式への対応が必要",
+      "effect": "ファイル検査画面に書き込み未対応と表示",
+      "postconditions": "送信を開始しない",
+      "failure": "このバージョンではファームウェア転送に未対応",
+      "implementation": null,
+      "test": null,
+      "status": "unverified"
+    },
+    {
+      "id": "PROF-01",
+      "title": "SCS/SMS/STSプロファイル",
+      "inputs": {},
+      "preconditions": "ヘッダがcatalogのFW範囲に一致",
+      "effect": "10個のDebug属性と6個の設定メモリ表を独立管理。設定表なしでもDebug属性があれば監視可能。torque_address=0のプロファイルは動作を許可しない。設定メモリ未定義ならProgramming書込禁止",
+      "postconditions": "型番の推測をせず不明はUnknown表記",
+      "failure": "SCS/SMSは静的定義・シミュレータのみ検証。物理互換は未確認",
+      "implementation": "catalog.identify",
+      "test": "test_debug_profiles_without_memory_table",
+      "status": "implemented"
+    },
+    {
+      "id": "MODBUS-01",
+      "title": "Modbus/PWM専用サーボFWプロファイル",
+      "inputs": {},
+      "preconditions": "対象プロトコル仕様と対応機器が必要",
+      "effect": "通信バックエンドはSCSバスに対応。Modbus通信は提供しない",
+      "postconditions": "未対応として明示",
+      "failure": "本版の通信バックエンドはSCSバスのみ",
+      "implementation": null,
+      "test": null,
+      "status": "unverified"
+    },
+    {
+      "id": "PWM-03",
+      "title": "Signal Min/Maxのアダプター設定",
+      "inputs": {},
+      "preconditions": "対応アダプターが必要",
+      "effect": "ソフトウェア側の出力範囲を設定。アダプターへの保存は未対応",
+      "postconditions": "アダプターの永続設定は変更しない",
+      "failure": "永続設定ができたとは表示しない",
+      "implementation": null,
+      "test": null,
+      "status": "unverified"
+    }
+  ]
+}
