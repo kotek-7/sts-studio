@@ -65,7 +65,20 @@ def main():
             )
         ]
         assert not forbidden, f"Unexpected PDF libraries: {forbidden}"
-        assert (bundle / "LICENSE").is_file()
+        for name in (
+            "README.md",
+            "README.ja.md",
+            "CHANGELOG.md",
+            "CONTRIBUTING.md",
+            "SECURITY.md",
+            "LICENSE",
+            "THIRD_PARTY_NOTICES.md",
+        ):
+            assert (bundle / name).read_bytes() == (ROOT / name).read_bytes(), name
+        for source in (ROOT / "docs").rglob("*"):
+            if source.is_file():
+                relative = source.relative_to(ROOT)
+                assert (bundle / relative).read_bytes() == source.read_bytes(), relative
         assert (bundle / "licenses/versions.json").is_file()
     print(f"Extracted GUI and CLI passed: {system}/{arch}")
 

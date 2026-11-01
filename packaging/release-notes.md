@@ -19,6 +19,7 @@ For a source build, download `sts-studio-0.6.1-source.tar.gz`. The `qt-everywher
 ## Changes
 
 - Correct the source CLI examples and native build instructions.
+- Include the changelog, contribution guide, and security contact linked from the bundled documentation.
 - Clarify the architecture reference and PWM mode changes when switching tabs.
 
 Application behavior and CLI output are unchanged from 0.6.0.

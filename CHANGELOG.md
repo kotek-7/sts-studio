@@ -4,7 +4,7 @@
 
 - Correct source CLI and native packaging instructions.
 - Clarify the architecture reference and PWM tab-switching behavior.
-- Include the updated guides in all platform packages.
+- Include the changelog, contribution guide, and security contact in all platform packages so bundled documentation links resolve.
 
 ## 0.6.0
 

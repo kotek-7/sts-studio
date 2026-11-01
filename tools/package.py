@@ -149,7 +149,15 @@ def build() -> None:
         )
     else:
         shutil.copytree(work / "native/sts-studio-gui", bundle / "gui", symlinks=True)
-    for name in ("README.md", "README.ja.md", "LICENSE", "THIRD_PARTY_NOTICES.md"):
+    for name in (
+        "README.md",
+        "README.ja.md",
+        "CHANGELOG.md",
+        "CONTRIBUTING.md",
+        "SECURITY.md",
+        "LICENSE",
+        "THIRD_PARTY_NOTICES.md",
+    ):
         shutil.copy2(ROOT / name, bundle / name)
     shutil.copytree(ROOT / "docs", bundle / "docs")
     shutil.copytree(notices, bundle / "licenses")
