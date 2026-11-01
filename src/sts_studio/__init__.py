@@ -1,2 +1,7 @@
 """STS Studio servo configuration and monitoring application."""
-__version__ = "0.3.2"
+
+import tomllib
+from pathlib import Path
+
+with (Path(__file__).resolve().parents[2] / "pyproject.toml").open("rb") as metadata:
+    __version__: str = tomllib.load(metadata)["project"]["version"]

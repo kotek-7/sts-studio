@@ -213,7 +213,7 @@
 
 **エラー・中止**: 忙しい間の変更は送信しない。旧指令をキューに蓄積しない
 
-**実装**: `ui.Window.slider_changed` / **テスト**: `test_live_slider_and_stop_discards_waiting_target`
+**実装**: `ui.motion.MotionController.slider_changed` / **テスト**: `test_live_slider_and_stop_discards_waiting_target`
 
 ## AUTO-01: Sweep往復
 

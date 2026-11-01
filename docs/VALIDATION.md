@@ -2,7 +2,7 @@
 
 通信・データ変換・設定操作・ファイル処理・GUI状態遷移を、自動テストと仮想シリアルで確認しています。
 
-2026-11-01: 55テスト成功。ソースからのデモ起動とGUI表示を確認済みです。
+2026-11-01 / 0.4.0: 72テスト成功。ソースからのデモ起動とGUI表示を確認済みです。
 
 ## 自動テスト
 
@@ -19,7 +19,8 @@
 実行コマンド:
 
 ```sh
-PYTHONPATH=src QT_QPA_PLATFORM=offscreen /usr/bin/python3 -m unittest discover -s tests -v
+uv sync --locked
+uv run --locked python tools/check.py
 ```
 
 通信の検証ベクトルは `spec/protocol.json`、ファイルとパケットのテストデータは `tests/fixtures/` にあります。
@@ -39,3 +40,15 @@ xdatはSTS設定領域の保存・復元に対応します。他ソフトウェ�
 STOP後のFB/記録継続、Goalの符号付き復号、通常FBの1要求化、設定表の周期更新と編集値保持、Liveの最新値処理とSTOPによる破棄、自動周期の独立、PWMモード遷移・出力OFF、高速通信試験、操作失敗後の監視継続、トルクOFF中の指令送信、検索順序、設定表なしDebugプロファイルを回帰テストしています。
 
 独立PTYを用いたpyserial通信で、FB/Goal、Write、Sync、Reg/Action、トルクOFF、設定値の保存と再読込を検証しました。物理サーボは操作していません。
+
+
+## 0.4.0の追加検証
+
+- 実際のQtボタンクリックによるOpen / Close、検索、設定保存、STOP。
+- Linux PTYをpyserialで開閉する接続試験。物理USBポートは使用しない。
+- Workerの同時実行拒否と、操作ごとに独立したcancel。
+- Executorの待機上限、監視中の操作受付、古い完了の無視、コールバック例外後の復帰。
+- 切断後に古い操作が実行されないこと、STOP直後の終了でも停止要求を完了すること。
+- Ruff format / lint、mypy全27モジュール、生成仕様書の一致。
+
+GitHub Actionsの設定は用意していますが、リモートでのCI実行は未実施です。ローカルでは同じチェックコマンドを実行しています。

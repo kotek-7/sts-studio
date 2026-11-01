@@ -4,18 +4,15 @@ Ubuntu向けのFEETECHサーボ設定・監視アプリです。サーボの検�
 
 ## 起動
 
-必要なUbuntuパッケージは `python3-pyqt5` と `python3-serial` です。
+開発環境はPython 3.12とuvで管理します。依存の解決結果は `uv.lock` に固定しています。
 
 ```sh
 cd ~/dev/sts-studio
-./run.sh
+uv sync --locked
+uv run --locked ./run.sh
 ```
 
-デモモードでは実機を接続せず、仮想サーボID1/2を操作できます。
-
-```sh
-./run.sh --demo
-```
+実機を使わず試す場合は `uv run --locked ./run.sh --demo` を実行します。Debianパッケージとユーザー領域へのインストールではUbuntuの `python3-pyqt5` と `python3-serial` を利用し、uvは不要です。開発用のQtと配布先のQtは別環境として検証します。
 
 ## 接続と操作
 
@@ -53,10 +50,21 @@ EEPROMはトルクOFFで編集します。書き込み後は値を読み戻し�
 `spec/` に機械可読定義、`src/sts_studio/` に実装、`tests/` にテストがあります。
 
 ```sh
-python3 tools/render_spec.py
-PYTHONPATH=src QT_QPA_PLATFORM=offscreen /usr/bin/python3 -m unittest discover -s tests -v
-python3 tools/package.py
+# 全検査: 整形・lint・型・仕様書・テスト
+uv run --locked python tools/check.py
+
+# 編集後の整形と仕様書生成
+uv run --locked ruff format src tests tools
+uv run --locked python tools/render_spec.py
+
+# deb / ソース配布物の生成
+uv run --locked python tools/package.py
+
+# このチェックアウトでコミット前の静的検査を有効化
+git config core.hooksPath .githooks
 ```
+
+開発手順・責務の境界・Git運用は [開発ガイド](docs/DEVELOPMENT.md) を参照してください。
 
 ## 対応範囲
 

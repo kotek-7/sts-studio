@@ -11,7 +11,7 @@
 | CTRL-03 | Reg Write | 対応 | `service.Service.control` | `test_registered_not_executed` |
 | CTRL-04 | Action | 対応 | `service.Service.action` | `test_action_broadcast` |
 | CTRL-05 | Torque Enable / OFF | 対応 | `service.Service.set_torque` | `test_stop_keeps_feedback_and_recording` |
-| CTRL-06 | 目標スライダー | 対応 | `ui.Window.slider_changed` | `test_live_slider_and_stop_discards_waiting_target` |
+| CTRL-06 | 目標スライダー | 対応 | `ui.motion.MotionController.slider_changed` | `test_live_slider_and_stop_discards_waiting_target` |
 | AUTO-01 | Sweep往復 | 対応 | `automation.Pattern` | `test_step_timer_is_independent` |
 | AUTO-02 | Step往復 | 対応 | `automation.Pattern` | `test_step_observed_sequence` |
 | PLOT-01 | 複数系列・範囲・ズーム | 対応 | `ui.Trend` | `test_plot_bounds` |

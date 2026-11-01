@@ -149,7 +149,7 @@
       "effect": "Live ONではスライダー値の変更時に送信。I/O中は最新の値1件だけを保持し、古い指令を蓄積しない",
       "postconditions": "Live OFFでは入力欄のみ更新。STOPで待機中の指令を破棄",
       "failure": "忙しい間の変更は送信しない。旧指令をキューに蓄積しない",
-      "implementation": "ui.Window.slider_changed",
+      "implementation": "ui.motion.MotionController.slider_changed",
       "test": "test_live_slider_and_stop_discards_waiting_target",
       "status": "implemented"
     },

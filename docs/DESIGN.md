@@ -4,7 +4,7 @@
 
 ## 1. 対象環境と構成
 
-Ubuntu上で動作するQtアプリケーションです。USBシリアルを介してFEETECH SCSバスへ接続します。STS用の動作・設定・監視機能を中心とし、機種とファームウェアの組み合わせからメモリ表を選択します。Python 3.10以上、PyQt5、pyserialを使用します。
+Ubuntu上で動作するQtアプリケーションです。USBシリアルを介してFEETECH SCSバスへ接続します。STS用の動作・設定・監視機能を中心とし、機種とファームウェアの組み合わせからメモリ表を選択します。Python 3.12、PyQt5、pyserialを使用します。
 
 デモモードでは仮想サーボID1/2を使用し、物理ポートを開きません。通信・ファイル・GUIを自動テストしています。実機での電気的挙動、電源断後の設定保持、PWM波形は未検証です。
 
@@ -19,14 +19,22 @@ Ubuntu上で動作するQtアプリケーションです。USBシリアルを介
 | service.Service | 操作要求 | discovered Servo辞書、pending ID集合 | Busへ委譲 |
 | files | Path / memory / rows | xdat、CSV、HEX検査結果 | 明示選択ファイルの読書き |
 | automation | start/end/step、応答時間 | 次目標値、統計 | なし |
-| jobs.Worker | (token, function) | done/failed/progress/trace signals | 1本の直列実行thread |
-| ui.Window | UI操作とsignal | 選択ID、キャッシュ、グラフ、録画状態 | workerへ要求、明示file dialog |
+| contracts | 型定義 | Link Protocol、Feedback / Snapshot / RestoreResult | なし |
+| jobs.Worker | (token, function) | 操作ごとのcancel、単一実行の受付制限 | ThreadPoolExecutor(max_workers=1) |
+| runtime.Executor | 操作要求と完了通知 | JobKind、実行中Job、上限32件のUI待機列 | Workerへの委譲、Qt signal |
+| runtime.Session | 接続と選択 | service、current、snapshot、commanded / uncertain | なし |
+| ui.view.DesktopView | コントローラ | ウィジェットとレイアウト | Qt描画のみ |
+| ui.window.Window | コンポーネント | 組立、周期の調停、終了処理 | Executorへの委譲 |
+| ui.connection / programming | UIイベント | 検索・接続、設定保存・復元のワークフロー | Serviceへの要求 |
+| ui.motion / pwm | UIイベント | AutoPlan、最新指令、停止待ち | Serviceへの要求 |
+| ui.monitoring / diagnostics | 応答・UIイベント | CaptureState、グラフ・記録、通信統計 | 明示ファイル保存 |
+| ui.signals | clicked(bool) | 明示的なpyqtSlot、例外報告 | UIメッセージ |
 | simulator.VirtualLink | 同じexchangeインターフェース | 仮想ID1/2とアダプター | 物理ポートへのアクセスなし |
 
 `Servo` = {sid:int, model:str, profile:Profile|None, header:bytes[9]}。firmware表示はheader[0].header[1]、モデル識別はheader[3]/header[4]。header[5]を検索IDに上書きして真のIDと決めつけません。
 
-`Snapshot` = {id:int, raw:bytes, values:dict[address,int], error:int}。
-`Feedback` = {id:int, values:dict[address,int], error:int, timestamp:Unix seconds}。
+`Snapshot` = {id:int, raw:bytes, values:dict[address,int], error:int, goal:int|None}。
+`Feedback` = {id:int, values:dict[address,int], error:int, goal:int|None, timestamp:Unix seconds}。
 `TelemetryRow` はFeedback.valuesにid,timestamp,error,goalを加えます。整数キーはレジスタアドレス、文字列キーはメタデータです。
 
 ## 3. 接続・状態遷移
@@ -34,12 +42,12 @@ Ubuntu上で動作するQtアプリケーションです。USBシリアルを介
 - **DISCONNECTED**: serviceなし。ポート選択、更新、通信条件、デモ切替だけ可能。ファイル検査と仕様閲覧は常に可能。
 - **CONNECTED**: portは開いているが、既知profileのサーボ未選択。検索、ID指定、アダプター操作が可能。
 - **READY**: 選択IDとprofileが存在。単一の操作を開始できる。複数選択時、表示・設定の対象は選択IDを昇順にした先頭。動作指令の対象は選択集合全体。
-- **BUSY**: 1個のI/Oジョブが実行中。接続条件、対象選択、追加動作を無効にする。モニターのtickは捨て、未送信動作を蓄積しない。
+- **BUSY**: 1個の前景I/Oジョブが実行中。接続条件、対象選択、追加動作を無効にする。モニターのtickは捨て、未送信動作を蓄積しない。
 - **AUTO**: Sweep/Stepの対象ID、速度、加速度、Time、方式、周期を開始時に固定。UI値を書き換えても走行中の契約を変えない。
 - **TESTING**: フィードバックREADを周期的に発行して統計を集計。通常モニターと同時送信しない。
 - **停止未確認**は別の集合 `uncertain` として保持する。単にDISCONNECTEDにすれば停止したという扱いにはしない。
 
-更新優先順は、停止要求 → 終了要求 → 自動動作 → 通信試験 → 通常モニターです。I/O中にSTOPを押すと、workerのcancelを立て、対象IDをpending_offへ記録。実行中の1要求が終わった後でトルクOFFを送ります。検索/複数台指令/復元は各要求間でcancelを調べます。シリアルrequestの上限時間は設定timeoutとwrite_timeoutに依存するため、STOPはハードウェア割込みではありません。
+更新優先順は、PWM停止・必要なモード変更・トルク停止 → 終了要求 → UI待機操作 → 最新の手動指令 → 自動動作 → 通信試験 → 通常モニターです。I/O中にSTOPを押すと、workerのcancelを立て、対象IDをpending_offへ記録。実行中の1要求が終わった後でトルクOFFを送ります。検索/複数台指令/復元は各要求間でcancelを調べます。シリアルrequestの上限時間は設定timeoutとwrite_timeoutに依存するため、STOPはハードウェア割込みではありません。
 
 終了時は自動動作とモニターを停止。実行中ジョブがあれば待ち、続いてcloseを再試行します。ON指令、停止未確認、登録指令が残る場合はUIで明示確認。終了をキャンセルした場合はウィンドウを残します。物理切断時に「停止済み」と表示しません。
 
@@ -114,7 +122,9 @@ UI threadはwidgetと画面用cacheだけを変更します。シリアルport�
 
 `spec/features.json` が機能契約、`spec/catalog.json` がレジスタとモデル、`spec/protocol.json` が通信仕様と検証ベクトルを定義します。これらを編集後、`python3 tools/render_spec.py` で文書を生成します。
 
-`PYTHONPATH=src QT_QPA_PLATFORM=offscreen python3 -m unittest discover -s tests -v` でテストを実行します。契約に対応する実装symbolとテスト名の存在、生成文書との一致、パケット検証、設定・記録ファイルのround-trip、GUI状態遷移を検査します。`python3 tools/package.py` でdebとソースアーカイブを生成します。
+`uv run --locked python tools/check.py` で整形、lint、全ソース型検査、仕様生成差分、pytestを検査します。通信・サービス・実行基盤には未型付け関数と未型付け呼出の禁止を追加しています。GUIの動的Qt境界は段階的な型付けです。`uv run --locked python tools/package.py` でdebとソースアーカイブを生成します。バージョンの正本は `pyproject.toml` です。
+
+依存方向、開発コマンド、Git運用と型検査の範囲は [DEVELOPMENT.md](DEVELOPMENT.md) を参照してください。
 
 ## 11. 対応範囲
 
@@ -137,3 +147,12 @@ Debug属性とメモリ表は別管理です。メモリ表にないFWでもDebu
 ### 監視中の画面更新
 
 周期監視中も操作欄の有効状態とREADY表示を維持します。監視中の設定保存・切断などはGUIスレッドの待機列に入れ、通信完了後に直列実行します。STOPは待機中の操作を破棄し、停止処理を優先します。設定表は変更のあるセルだけを書き換え、編集中の値を維持します。
+
+
+## 13. 実行管理の不変条件
+
+Workerは同時に1件しか受け付けません。各要求のcancel Eventは独立し、次の要求で前のcancelを使い回しません。ExecutorはJobのtokenが一致した完了だけ受け取り、重複・古い完了を無視します。描画コールバックで例外が起きても実行中状態を解除し、操作名とエラーを報告します。
+
+周期監視はJobKind.MONITORとして分類し、画面に表示する日本語の操作名から操作可否を推測しません。監視中のボタン操作は最大32件まで待機し、超過時はその操作を受け付けずメッセージを表示します。STOP・切断・終了では待機操作を破棄します。STOPの直後に閉じた場合は、すでに要求された停止処理の完了を待って閉じます。
+
+Qtのclicked(bool)はClickActionの明示的なpyqtSlot(bool)で受けます。不要なbool引数をここで消費し、トルクのチェック状態が必要な操作はboolを受け取る通常のハンドラに接続します。関数シグネチャを調べて引数を切り落とすデコレータは使用しません。

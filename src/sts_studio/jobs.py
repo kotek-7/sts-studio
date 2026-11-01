@@ -1,24 +1,60 @@
-"""One bounded serial worker. UI keeps no backlog of movement requests."""
-import queue,threading
-from PyQt5.QtCore import QObject,pyqtSignal
+"""Single-flight worker with bounded admission and per-operation cancellation."""
+
+from __future__ import annotations
+
+import threading
+from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any
+
+from PyQt5.QtCore import QObject, pyqtSignal
+
+Work = Callable[[threading.Event], Any]
+
 
 class Worker(QObject):
-    done=pyqtSignal(object,object)
-    failed=pyqtSignal(object,object)
-    progress=pyqtSignal(object)
-    trace=pyqtSignal(str,bytes)
-    def __init__(self):
-        super().__init__();self.queue=queue.Queue();self.cancel=threading.Event();self.closed=False
-        self.thread=threading.Thread(target=self.run,name='fd-serial',daemon=True);self.thread.start()
-    def submit(self,token,function):
-        if self.closed:raise RuntimeError('worker closed')
-        self.cancel.clear();self.queue.put((token,function))
-    def run(self):
-        while True:
-            item=self.queue.get()
-            if item is None:return
-            token,fn=item
-            try:self.done.emit(token,fn(self.cancel))
-            except Exception as e:self.failed.emit(token,e)
-    def close(self):
-        self.closed=True;self.cancel.set();self.queue.put(None)
+    done = pyqtSignal(int, object)
+    failed = pyqtSignal(int, object)
+    progress = pyqtSignal(object)
+    trace = pyqtSignal(str, bytes)
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._pool = ThreadPoolExecutor(max_workers=1, thread_name_prefix="sts-serial")
+        self._lock = threading.Lock()
+        self._active = False
+        self._closed = False
+        self._cancel = threading.Event()
+
+    def submit(self, token: int, function: Work) -> None:
+        with self._lock:
+            if self._closed:
+                raise RuntimeError("worker closed")
+            if self._active:
+                raise RuntimeError("worker already executing an operation")
+            self._active = True
+            self._cancel = threading.Event()
+            cancel = self._cancel
+        self._pool.submit(self._run, token, function, cancel)
+
+    def _run(self, token: int, function: Work, cancel: threading.Event) -> None:
+        try:
+            result = function(cancel)
+        except Exception as error:
+            with self._lock:
+                self._active = False
+            self.failed.emit(token, error)
+        else:
+            with self._lock:
+                self._active = False
+            self.done.emit(token, result)
+
+    def cancel_current(self) -> None:
+        with self._lock:
+            self._cancel.set()
+
+    def close(self) -> None:
+        with self._lock:
+            self._closed = True
+            self._cancel.set()
+        self._pool.shutdown(wait=False, cancel_futures=True)
