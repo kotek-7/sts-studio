@@ -31,6 +31,11 @@ packages = ["src/sts_studio"]
 [tool.hatch.build.targets.wheel.force-include]
 "spec" = "sts_studio/resources/spec"
 "docs" = "sts_studio/resources/docs"
+"README.md" = "sts_studio/resources/README.md"
+"README.ja.md" = "sts_studio/resources/README.ja.md"
+"CHANGELOG.md" = "sts_studio/resources/CHANGELOG.md"
+"CONTRIBUTING.md" = "sts_studio/resources/CONTRIBUTING.md"
+"SECURITY.md" = "sts_studio/resources/SECURITY.md"
 "pyproject.toml" = "sts_studio/resources/pyproject.toml"
 "LICENSE" = "sts_studio/resources/LICENSE"
 "THIRD_PARTY_NOTICES.md" = "sts_studio/resources/THIRD_PARTY_NOTICES.md"

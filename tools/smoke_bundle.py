@@ -74,7 +74,10 @@ def main():
             "LICENSE",
             "THIRD_PARTY_NOTICES.md",
         ):
-            assert (bundle / name).read_bytes() == (ROOT / name).read_bytes(), name
+            for reference in bundle.rglob("SPECIFICATION.md"):
+                if reference.parent.name == "docs":
+                    packaged = reference.parent.parent / name
+                    assert packaged.read_bytes() == (ROOT / name).read_bytes(), packaged
         for source in (ROOT / "docs").rglob("*"):
             if source.is_file():
                 relative = source.relative_to(ROOT)

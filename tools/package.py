@@ -66,11 +66,17 @@ def build() -> None:
     licenses(notices)
     source_notices, source_archives = prepare()
     shutil.copytree(source_notices, notices / "Qt-and-PySide", dirs_exist_ok=True)
+    documents = (
+        "README.md",
+        "README.ja.md",
+        "CHANGELOG.md",
+        "CONTRIBUTING.md",
+        "SECURITY.md",
+        "LICENSE",
+        "THIRD_PARTY_NOTICES.md",
+    )
     data = [(ROOT / name, name) for name in ("spec", "docs")]
-    data += [
-        (ROOT / name, ".")
-        for name in ("pyproject.toml", "LICENSE", "THIRD_PARTY_NOTICES.md", "sts-studio.svg")
-    ]
+    data += [(ROOT / name, ".") for name in ("pyproject.toml", "sts-studio.svg", *documents)]
     data.append((notices, "licenses"))
     for entry, name in (("cli", "sts-studio"), ("gui", "sts-studio-gui")):
         command = [
@@ -149,15 +155,7 @@ def build() -> None:
         )
     else:
         shutil.copytree(work / "native/sts-studio-gui", bundle / "gui", symlinks=True)
-    for name in (
-        "README.md",
-        "README.ja.md",
-        "CHANGELOG.md",
-        "CONTRIBUTING.md",
-        "SECURITY.md",
-        "LICENSE",
-        "THIRD_PARTY_NOTICES.md",
-    ):
+    for name in documents:
         shutil.copy2(ROOT / name, bundle / name)
     shutil.copytree(ROOT / "docs", bundle / "docs")
     shutil.copytree(notices, bundle / "licenses")
