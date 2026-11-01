@@ -8,7 +8,7 @@ STS Studio servo configuration and monitoring application.
 
 ## __main__.py
 
-
+Keep the desktop default while loading CLI without Qt.
 
 ## automation.py
 
@@ -45,6 +45,27 @@ Register definitions, model identification, and value encoding.
 - `Profile.field(self, a: int)` — line 95
 
 - `identify(header: bytes)` — line 101
+## cli/__init__.py
+
+Headless command line entry point; imports no Qt modules.
+
+- `json_default(value: object)` — line 21
+- `emit(value: object)` — line 27
+- `main(argv: Sequence[str] | None=None)` — line 31
+## cli/commands.py
+
+Synchronous CLI workflows using the same service as the desktop UI.
+
+- `describe(servo: Servo)` — line 18
+- `stop_targets(service: Service, targets: list[int], emit: Emit)` — line 28
+- `execute(args: argparse.Namespace, service: Service, emit: Emit)` — line 41
+## cli/parser.py
+
+CLI syntax and validation, performed before opening a serial port.
+
+- `integer_range(low: int, high: int)` — line 12
+- `ids(text: str)` — line 25
+- `build_parser()` — line 32
 ## contracts.py
 
 Transport and result contracts shared by real and simulated connections.

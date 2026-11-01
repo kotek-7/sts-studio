@@ -14,6 +14,19 @@ uv run --locked ./run.sh
 
 実機を使わず試す場合は `uv run --locked ./run.sh --demo` を実行します。Debianパッケージとユーザー領域へのインストールではUbuntuの `python3-pyqt5` と `python3-serial` を利用し、uvは不要です。開発用のQtと配布先のQtは別環境として検証します。
 
+## CLI
+
+GUIを起動せず、端末から検索・読取・設定保存・指令送信を実行できます。
+
+```sh
+./run.sh cli --help
+./run.sh cli ports
+./run.sh cli --demo scan
+./run.sh cli --port /dev/ttyUSB0 --baud 1000000 feedback --id 1
+```
+
+インストール済み環境では `sts-studio` がCLIの入口です。結果はJSON、連続監視はJSON Linesで出力します。詳しくは [CLIの使い方](docs/CLI.md) を参照してください。
+
 ## 接続と操作
 
 1. USBシリアルを接続し、Portを更新します。`/dev/ttyUSB0`、`/dev/ttyACM0` などを選択します。

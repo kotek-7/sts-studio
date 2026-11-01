@@ -584,6 +584,27 @@
 
 **実装**: `—` / **テスト**: `—`
 
+## CLI-01: ヘッドレスCLI
+
+状態: **対応**
+
+### 入力
+
+| 項目 | 型・範囲・既定値 |
+|---|---|
+| 接続 | --port または --demo、baud/parity/timeout |
+| 操作 | ports/scan/info/read/write/feedback/watch/move/torque/stop/action/pwm/backup/restore/calibrate/reset/inspect |
+
+**前提**: 実機ポートは明示指定。GUIとの同時占有は禁止。Qtをロードしない。
+
+**実行手順・通信**: ServiceをGUIと共有。stdoutへJSON、watchはJSON Lines。設定保存は読戻し確認。restoreは既定で差分表示、--applyで適用。
+
+**成功条件・後状態**: 単発コマンド完了時にポートを閉じる。move/Actionは送信済みと実行確認を区別。
+
+**エラー・中止**: 構文エラー2、実行失敗1、Ctrl+Cは130。stopは一部失敗でも残りのIDを試行。中断・終了時にトルク状態を自動変更しない。
+
+**実装**: `cli.main` / **テスト**: `test_cli_headless_entry_and_scan`
+
 ## 通信フレームの検証ベクトル
 
 | ID | TX | 意味 |

@@ -30,3 +30,4 @@
 | PROF-01 | SCS/SMS/STSプロファイル | 対応 | `catalog.identify` | `test_debug_profiles_without_memory_table` |
 | MODBUS-01 | Modbus/PWM専用サーボFWプロファイル | 未対応 | `—` | `—` |
 | PWM-03 | Signal Min/Maxのアダプター設定 | 未対応 | `—` | `—` |
+| CLI-01 | ヘッドレスCLI | 対応 | `cli.main` | `test_cli_headless_entry_and_scan` |

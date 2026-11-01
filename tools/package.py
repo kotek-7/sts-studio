@@ -37,6 +37,10 @@ launcher.mkdir(parents=True)
 (launcher / "sts-studio.desktop").write_text(
     "[Desktop Entry]\nType=Application\nName=STS Studio\nExec=/opt/sts-studio/run.sh\nIcon=/opt/sts-studio/sts-studio.svg\nTerminal=false\nCategories=Development;Electronics;\n"
 )
+binary = stage / "usr/bin/sts-studio"
+binary.parent.mkdir(parents=True, exist_ok=True)
+binary.write_text('#!/bin/sh\nexec /opt/sts-studio/run.sh cli "$@"\n')
+binary.chmod(0o755)
 subprocess.run(
     [
         "dpkg-deb",

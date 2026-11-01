@@ -77,3 +77,8 @@ git diff --check
 `uv run --locked python tools/package.py` はバージョンをpyprojectから読み、debとソースアーカイブを生成します。debはUbuntuのシステムPython・Qt・pyserialで起動し、開発用venvをコピーしません。ソースアーカイブにはuv.lock・開発設定・テストを含めます。
 
 参考: [uvプロジェクト管理](https://docs.astral.sh/uv/guides/projects/)、[Ruff設定](https://docs.astral.sh/ruff/configuration/)、[mypy設定](https://mypy.readthedocs.io/en/stable/config_file.html)、[uvとGitHub Actions](https://docs.astral.sh/uv/guides/integration/github/)。
+
+
+## CLIの追加先
+
+`cli/parser.py` が引数と接続前の構文検証、`cli/commands.py` がServiceを使う操作、`cli/__init__.py` がポートの寿命と出力・終了コードを担当します。`__main__` は `cli` 指定時にQtをimportしません。CLIへ新しい動作を追加する場合も通信コードを複製せず、Serviceへ委譲します。CLIのsubprocessテスト、JSON出力、エラー時のclose、PTYを使う通信試験は `tests/test_cli.py` にあります。
