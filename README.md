@@ -1,6 +1,6 @@
 # STS Studio
 
-**⚠️ FULLY VIBE CODED PRODUCT! I only tested it for ubuntu 24.04 and STS3215 12V model.*
+**⚠️ FULLY VIBE CODED PRODUCT! I only tested it for ubuntu 24.04 and STS3215 12V model.**
 
 FEETECH Debug Tool
 
