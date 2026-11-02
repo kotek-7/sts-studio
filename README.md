@@ -1,5 +1,7 @@
 # STS Studio
 
+**⚠️ FULLY VIBE CODED PRODUCT! I only tested it for ubuntu 24.04 and STS3215 12V model.*
+
 FEETECH Debug Tool
 
 [日本語](README.ja.md) · [Download](https://github.com/kotek-7/sts-studio/releases/latest) · [CLI](docs/CLI.en.md)
